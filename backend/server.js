@@ -8,6 +8,9 @@ import connectDB from './config/db.js';
 import initAdmin from './utils/initAdmin.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 
+// ─── Routes ───────────────────────────────────────────────────────
+import authRoutes from './routes/authRoutes.js';
+
 dotenv.config();
 
 // Connect to MongoDB & Initialize Admin
@@ -32,8 +35,8 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── API Routes ───────────────────────────────────────────────────
-// Routes will be added here as modules are implemented
-// Example: app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+// More routes will be added here as modules are implemented
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
