@@ -37,7 +37,6 @@ export default function CreateCourse() {
     category: '',
     price: 0,
     level: 'all',
-    language: 'Tiếng Việt',
     requirements: [''],
     objectives: [''],
     tags: '',
@@ -57,7 +56,7 @@ export default function CreateCourse() {
         setFetchingCategories(false);
       }
     };
-    
+
     loadCategories();
   }, []);
 
@@ -85,7 +84,7 @@ export default function CreateCourse() {
   const addListItem = (key) => {
     setForm(prev => ({ ...prev, [key]: [...prev[key], ''] }));
   };
-  
+
   const removeListItem = (key, idx) => {
     setForm(prev => {
       if (prev[key].length > 1) {
@@ -98,28 +97,28 @@ export default function CreateCourse() {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    if (!file.type.startsWith('image/')) { 
-      toast.error('Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)'); 
-      return; 
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)');
+      return;
     }
-    
-    if (file.size > 5 * 1024 * 1024) { 
-      toast.error('Ảnh tối đa 5MB'); 
-      return; 
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh tối đa 5MB');
+      return;
     }
-    
+
     if (preview) {
       URL.revokeObjectURL(preview);
     }
-    
+
     setThumbnail(file);
     setPreview(URL.createObjectURL(file));
   };
 
   const validateForm = () => {
     const errors = [];
-    
+
     if (!form.title.trim()) errors.push('Tiêu đề khóa học');
     if (!form.description.trim()) errors.push('Mô tả chi tiết');
     if (!form.category) errors.push('Danh mục');
@@ -127,22 +126,22 @@ export default function CreateCourse() {
       toast.error('Giá không được âm');
       return false;
     }
-    
+
     if (errors.length > 0) {
       toast.error(`Vui lòng nhập: ${errors.join(', ')}`);
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (status = 'draft') => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       const fd = new FormData();
-      
+
       fd.append('title', form.title.trim());
       fd.append('description', form.description.trim());
       fd.append('shortDescription', form.shortDescription.trim());
@@ -150,18 +149,17 @@ export default function CreateCourse() {
       fd.append('price', Number(form.price));
       fd.append('status', status);
       fd.append('level', form.level);
-      fd.append('language', form.language);
-      
+
       const validRequirements = form.requirements.filter(r => r.trim());
       if (validRequirements.length > 0) {
         fd.append('requirements', JSON.stringify(validRequirements));
       }
-      
+
       const validObjectives = form.objectives.filter(o => o.trim());
       if (validObjectives.length > 0) {
         fd.append('objectives', JSON.stringify(validObjectives));
       }
-      
+
       if (form.tags.trim()) {
         const tags = form.tags.split(',')
           .map(t => t.trim())
@@ -170,7 +168,7 @@ export default function CreateCourse() {
           fd.append('tags', JSON.stringify(tags));
         }
       }
-      
+
       if (thumbnail) {
         fd.append('thumbnail', thumbnail);
       }
@@ -178,18 +176,18 @@ export default function CreateCourse() {
       await courseAPI.create(fd);
 
       toast.success(
-        status === 'published' 
-          ? '✅ Khóa học đã được xuất bản thành công!' 
+        status === 'published'
+          ? '✅ Khóa học đã được xuất bản thành công!'
           : '💾 Đã lưu vào bản nháp'
       );
-      
+
       setTimeout(() => {
         navigate('/instructor/dashboard');
       }, 1500);
-      
+
     } catch (err) {
       console.error('Create course error:', err);
-      
+
       const errorMsg = err.response?.data?.message;
       if (errorMsg?.includes('category')) {
         toast.error('Danh mục không hợp lệ. Vui lòng chọn lại.');
@@ -219,8 +217,8 @@ export default function CreateCourse() {
   return (
     <div className="animate-fade-in max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-8">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
           disabled={loading}
         >
@@ -332,21 +330,7 @@ export default function CreateCourse() {
               />
             </div>
 
-            <div>
-              <label htmlFor="language" className="block text-sm font-semibold text-slate-300 mb-2">
-                Ngôn ngữ
-              </label>
-              <select
-                id="language"
-                value={form.language}
-                onChange={e => setField('language', e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 text-white rounded-xl px-4 py-3 text-sm outline-none transition-all disabled:opacity-60"
-                disabled={loading}
-              >
-                <option>Tiếng Việt</option>
-                <option>English</option>
-              </select>
-            </div>
+
           </div>
         </section>
 

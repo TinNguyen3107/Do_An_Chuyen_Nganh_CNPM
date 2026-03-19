@@ -1,23 +1,25 @@
+/**
+ * Course Model — clean (no business-rule validation, only schema structure)
+ *
+ * Validation is handled by Joi validators in validators/course.validator.js
+ */
 import mongoose from 'mongoose';
-
 
 const courseSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, 'Tiêu đề khoá học là bắt buộc'],
+      required: true,
       trim: true,
-      maxlength: [200, 'Tiêu đề không được vượt quá 200 ký tự'],
     },
     description: {
       type: String,
-      required: [true, 'Mô tả khoá học là bắt buộc'],
+      required: true,
       trim: true,
     },
     shortDescription: {
       type: String,
       default: '',
-      maxlength: [300, 'Mô tả ngắn không được vượt quá 300 ký tự'],
     },
     thumbnail: {
       type: String,
@@ -31,14 +33,13 @@ const courseSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
-      required: [true, 'Danh mục là bắt buộc'],
+      required: true,
     },
     price: {
       type: Number,
       default: 0,
-      min: [0, 'Giá không được âm'],
     },
-    // isFree is auto-computed but stored for quick queries
+    // Auto-computed from price
     isFree: {
       type: Boolean,
       default: true,
@@ -57,56 +58,29 @@ const courseSchema = new mongoose.Schema(
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
     },
-    // Aggregated stats (updated on enrollment/review)
-    totalStudents: {
-      type: Number,
-      default: 0,
-    },
-    averageRating: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 5,
-    },
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
-    totalLectures: {
-      type: Number,
-      default: 0,
-    },
-    totalDuration: {
-      type: Number, // in minutes
-      default: 0,
-    },
-    requirements: {
-      type: [String],
-      default: [],
-    },
-    objectives: {
-      type: [String],
-      default: [],
-    },
-    tags: {
-      type: [String],
-      default: [],
-    },
-    publishedAt: {
-      type: Date,
-      default: null,
-    },
+    // Aggregated stats (updated on enrollment / review)
+    totalStudents: { type: Number, default: 0 },
+    averageRating:  { type: Number, default: 0 },
+    totalReviews:   { type: Number, default: 0 },
+    totalLectures:  { type: Number, default: 0 },
+    totalDuration:  { type: Number, default: 0 }, // minutes
+
+    requirements: { type: [String], default: [] },
+    objectives:   { type: [String], default: [] },
+    tags:         { type: [String], default: [] },
+
+    publishedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-// Auto-set isFree based on price
+// Infrastructure hook: auto-set isFree flag based on price
 courseSchema.pre('save', function (next) {
   this.isFree = this.price === 0;
   next();
 });
 
-// Index for fast searches
+// Indexes for fast searches
 courseSchema.index({ title: 'text', description: 'text', tags: 'text' });
 courseSchema.index({ status: 1, category: 1 });
 courseSchema.index({ instructor: 1 });

@@ -7,12 +7,14 @@ import {
 } from '../controllers/enrollmentController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { authorize } from '../middlewares/roleMiddleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { enrollCourseSchema } from '../validators/enrollment.validator.js';
 
 const router = express.Router();
 
 // Student enrolls in a course
 // POST /api/enrollments  { courseId }
-router.post('/', protect, authorize('student'), enrollCourse);
+router.post('/', protect, authorize('student'), validate(enrollCourseSchema), enrollCourse);
 
 // Student sees their enrolled courses
 // GET /api/enrollments/my        (legacy)

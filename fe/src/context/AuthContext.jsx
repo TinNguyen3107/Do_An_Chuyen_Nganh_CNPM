@@ -7,14 +7,34 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load persisted user on mount
+  // Load persisted user on mount, then sync with server
   useEffect(() => {
     const saved = localStorage.getItem('26tech_user');
     if (saved) {
-      try { setUser(JSON.parse(saved)); }
-      catch { localStorage.removeItem('26tech_user'); }
+      try {
+        const parsed = JSON.parse(saved);
+        setUser(parsed);
+        // Sync with server to get latest instructorStatus etc.
+        authAPI.getProfile()
+          .then(res => {
+            const freshUser = res.data.data;
+            const merged = { ...freshUser, token: parsed.token };
+            setUser(merged);
+            localStorage.setItem('26tech_user', JSON.stringify(merged));
+          })
+          .catch(() => {
+            // Token expired → force logout
+            localStorage.removeItem('26tech_user');
+            setUser(null);
+          })
+          .finally(() => setLoading(false));
+      } catch {
+        localStorage.removeItem('26tech_user');
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = useCallback((userData) => {

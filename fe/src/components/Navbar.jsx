@@ -45,7 +45,9 @@ export default function Navbar() {
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
             {navLink('/courses', 'Khoá học')}
-            {user && navLink('/student/dashboard', 'Khóa học của tôi')}
+            {isApprovedInstructor && navLink('/instructor/dashboard', 'Quản lý khoá học')}
+            {user && navLink('/student/dashboard', 'Học của tôi')}
+            {isAdmin && navLink('/admin/dashboard', 'Admin')}
           </div>
 
           {/* Right side */}
@@ -90,6 +92,24 @@ export default function Navbar() {
                       <p className="text-sm font-medium text-white truncate">{user.email}</p>
                     </div>
 
+                    {user && (
+                      <Link to="/student/dashboard" onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <span>📚</span> Học của tôi
+                      </Link>
+                    )}
+                    {isApprovedInstructor && (
+                      <Link to="/instructor/dashboard" onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <span>🏫</span> Quản lý khoá học
+                      </Link>
+                    )}
+                    {isAdmin && (
+                      <Link to="/admin/dashboard" onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <span>👑</span> Trang Admin
+                      </Link>
+                    )}
                     <div className="border-t border-slate-800 mt-1 pt-1">
                       <button
                         id="logout-btn"

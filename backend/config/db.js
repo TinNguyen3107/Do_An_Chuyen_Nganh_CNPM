@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const connectDB = async () => {
   try {
     // Sửa: dùng đúng tên biến trong .env là MONGO_URI
-    const uri = process.env.MONGO_URI;
+    const uri = process.env.MONGODB_URI;
 
     // Debug để kiểm tra (có thể xóa sau khi chạy ổn)
     console.log('URI đang sử dụng để kết nối MongoDB:', uri || 'UNDEFINED - kiểm tra .env');

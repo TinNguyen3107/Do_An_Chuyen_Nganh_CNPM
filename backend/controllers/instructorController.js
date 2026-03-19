@@ -1,3 +1,7 @@
+/**
+ * Instructor Controller — thin layer, no manual validation
+ * All input validation is handled by Joi middleware in routes/instructorRoutes.js
+ */
 import asyncHandler from 'express-async-handler';
 import * as instructorService from '../services/instructorService.js';
 

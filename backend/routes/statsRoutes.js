@@ -1,9 +1,9 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
-// import Course from '../models/Course.js';
-// import Category from '../models/Category.js';
-// import Enrollment from '../models/Enrollment.js';
+import Course from '../models/Course.js';
+import Category from '../models/Category.js';
+import Enrollment from '../models/Enrollment.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { authorize } from '../middlewares/roleMiddleware.js';
 

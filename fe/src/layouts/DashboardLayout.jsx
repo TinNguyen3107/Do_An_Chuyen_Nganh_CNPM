@@ -1,5 +1,4 @@
 
-=======
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BookIcon, CheckIcon, StudentIcon, InstructorIcon, UserIcon } from '../components/Icons/Icons';
@@ -41,10 +40,9 @@ export default function DashboardLayout({ sidebarLinks, title }) {
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`
                 }
               >
@@ -58,7 +56,7 @@ export default function DashboardLayout({ sidebarLinks, title }) {
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold">
-              {user?.avatar ? <img src={user.avatar} className="rounded-full w-full h-full object-cover"/> : user?.name?.charAt(0)}
+              {user?.avatar ? <img src={user.avatar} className="rounded-full w-full h-full object-cover" /> : user?.name?.charAt(0)}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-white truncate">{user?.name}</p>

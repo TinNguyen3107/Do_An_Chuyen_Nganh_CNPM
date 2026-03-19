@@ -1,3 +1,8 @@
+/**
+ * User Model — clean (no business-rule validation, only schema structure)
+ *
+ * Validation is handled by Joi validators in validators/auth.validator.js
+ */
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -5,24 +10,19 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Vui lòng cung cấp tên'],
+      required: true,
       trim: true,
     },
     email: {
       type: String,
-      required: [true, 'Vui lòng cung cấp email'],
+      required: true,
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Email không hợp lệ',
-      ],
     },
     password: {
       type: String,
-      required: [true, 'Vui lòng cung cấp mật khẩu'],
-      minlength: [6, 'Mật khẩu tối thiểu 6 ký tự'],
+      required: true,
       select: false,
     },
     role: {
@@ -75,7 +75,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before save
+// Hash password before save (infrastructure hook — NOT a business rule)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);

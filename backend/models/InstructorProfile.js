@@ -1,3 +1,8 @@
+/**
+ * InstructorProfile Model — clean (no business-rule validation, only schema structure)
+ *
+ * Validation is handled by Joi validators in validators/instructor.validator.js
+ */
 import mongoose from 'mongoose';
 
 const instructorProfileSchema = new mongoose.Schema(
@@ -8,10 +13,9 @@ const instructorProfileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // Application fields
     expertise: {
       type: String,
-      required: [true, 'Vui lòng cung cấp chuyên môn'],
+      required: true,
       trim: true,
     },
     yearsOfExperience: {
