@@ -38,7 +38,7 @@ api.interceptors.response.use(
 );
 
 // ─────────────────────────────────────────────────────────────────
-// AUTH (Phần của TV1 - Đã có uploadAvatar)
+// AUTH
 // ─────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: (formData) => api.post('/auth/register', formData, {
@@ -52,11 +52,11 @@ export const authAPI = {
   uploadAvatar: (formData) => api.put('/auth/profile/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+
 };
 
 // ─────────────────────────────────────────────────────────────────
-
-// CATEGORIES (PHẦN CỦA TV4 - Quản lý danh mục)
+// CATEGORIES
 // ─────────────────────────────────────────────────────────────────
 export const categoryAPI = {
   getAll: (onlyActive = false) => api.get(`/categories${onlyActive ? '?active=true' : ''}`),
@@ -67,21 +67,7 @@ export const categoryAPI = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// INSTRUCTORS (PHẦN CỦA TV4 - Phê duyệt giảng viên)
-// ─────────────────────────────────────────────────────────────────
-export const instructorAPI = {
-  getMyApplication: () => api.get('/instructors/application'),
-  apply: (formData) => api.post('/instructors/apply', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  // Admin
-  getAllApplications: (params = {}) => api.get('/instructors/applications', { params }),
-  approve: (id) => api.patch(`/instructors/applications/${id}/approve`),
-  reject: (id, adminNote) => api.patch(`/instructors/applications/${id}/reject`, { adminNote }),
-};
-
 // COURSES
-
 // ─────────────────────────────────────────────────────────────────
 export const courseAPI = {
   getAll: (params = {}) => api.get('/courses', { params }),
@@ -97,31 +83,37 @@ export const courseAPI = {
   delete: (id) => api.delete(`/courses/${id}`),
 };
 
-
-export const categoryAPI = {
-  getAll: () => api.get('/categories'),
-};
-
+// ─────────────────────────────────────────────────────────────────
 // ENROLLMENTS
 // ─────────────────────────────────────────────────────────────────
 export const enrollmentAPI = {
   enroll: (courseId) => api.post('/enrollments', { courseId }),
   getMyEnrollments: () => api.get('/enrollments/my'),
-
-  getMyCourses: () => api.get('/enrollments/my-courses'),
-
+  getMyCourses: () => api.get('/enrollments/my-courses'), // alias per spec
   checkEnrollment: (courseId) => api.get(`/enrollments/check/${courseId}`),
   getCourseStudents: (courseId) => api.get(`/enrollments/course/${courseId}`),
 };
 
 // ─────────────────────────────────────────────────────────────────
-
 // STATS (admin overview)
 // ─────────────────────────────────────────────────────────────────
 export const statsAPI = {
   getOverview: () => api.get('/stats/overview'),
 };
 
+// ─────────────────────────────────────────────────────────────────
+// INSTRUCTORS (applications)
+// ─────────────────────────────────────────────────────────────────
+export const instructorAPI = {
+  getMyApplication: () => api.get('/instructors/application'),
+  apply: (formData) => api.post('/instructors/apply', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Admin
+  getAllApplications: (params = {}) => api.get('/instructors/applications', { params }),
+  approve: (id) => api.patch(`/instructors/applications/${id}/approve`),
+  reject: (id, adminNote) => api.patch(`/instructors/applications/${id}/reject`, { adminNote }),
+};
 
 // ─────────────────────────────────────────────────────────────────
 // USERS (admin)
@@ -132,6 +124,5 @@ export const userAPI = {
   changeRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
-
 
 export default api;

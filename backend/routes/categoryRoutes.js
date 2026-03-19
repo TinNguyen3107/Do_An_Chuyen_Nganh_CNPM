@@ -1,4 +1,6 @@
 import express from 'express';
+
+=======
 import {
   getCategories,
   getCategory,
@@ -21,3 +23,4 @@ router.put('/:id', protect, authorize('admin'), updateCategory);
 router.delete('/:id', protect, authorize('admin'), deleteCategory);
 
 export default router;
+

@@ -1,5 +1,6 @@
 import Course from '../models/Course.js';
 
+
 /**
  * Course Repository
  */
@@ -70,3 +71,4 @@ export const findAllForAdmin = ({ page = 1, limit = 20, status } = {}) => {
 
 export const incrementStudentCount = (courseId) =>
   Course.findByIdAndUpdate(courseId, { $inc: { totalStudents: 1 } });
+

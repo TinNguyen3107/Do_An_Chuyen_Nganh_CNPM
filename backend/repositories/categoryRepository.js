@@ -1,5 +1,6 @@
 import Category from '../models/Category.js';
 
+
 /**
  * Category Repository
  */
@@ -24,3 +25,4 @@ export const updateCategory = (id, data) =>
 export const deleteCategory = (id) => Category.findByIdAndDelete(id);
 
 export const count = () => Category.countDocuments();
+

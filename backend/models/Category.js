@@ -1,10 +1,15 @@
+/**
+ * Category Model — clean (no business-rule validation, only schema structure)
+ *
+ * Validation is handled by Joi validators in validators/category.validator.js
+ */
 import mongoose from 'mongoose';
 
 const categorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Tên danh mục là bắt buộc'],
+      required: true,
       unique: true,
       trim: true,
     },
@@ -35,7 +40,7 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate slug from name before saving
+// Infrastructure hook: auto-generate slug from name
 categorySchema.pre('save', function (next) {
   if (this.isModified('name')) {
     this.slug = this.name
