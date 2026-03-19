@@ -1,3 +1,7 @@
+/**
+ * Course Controller — thin layer, no manual validation
+ * All input validation is handled by Joi middleware in routes/courseRoutes.js
+ */
 import asyncHandler from 'express-async-handler';
 import * as courseService from '../services/courseService.js';
 
@@ -15,16 +19,16 @@ export const getCourses = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get course detail (public)
+ * @desc    Get course detail
  * @route   GET /api/courses/:id
- * @access  Public
+ * @access  Public (optionalProtect)
  */
 export const getCourse = asyncHandler(async (req, res) => {
   const course = await courseService.getCourseById(req.params.id);
-  // Allow owner or admin to view any status; guests/students only see published
-  const userId = req.user?._id?.toString();
+  const userId  = req.user?._id?.toString();
   const ownerId = course.instructor?._id?.toString() || course.instructor?.toString();
   const isOwnerOrAdmin = userId && (req.user?.role === 'admin' || userId === ownerId);
+
   if (course.status !== 'published' && !isOwnerOrAdmin) {
     res.status(404);
     throw new Error('Khoá học không tồn tại hoặc chưa được công khai');
@@ -48,18 +52,23 @@ export const getMyCourses = asyncHandler(async (req, res) => {
  * @access  Private (approved instructor)
  */
 export const createCourse = asyncHandler(async (req, res) => {
-  const { title, description, shortDescription, category, price, status, level, language, requirements, objectives, tags } = req.body;
+  const {
+    title, description, shortDescription, category,
+    price, status, level, language,
+    requirements, objectives, tags,
+  } = req.body;
 
-  if (!title || !description || !category) {
-    res.status(400);
-    throw new Error('Tiêu đề, mô tả và danh mục là bắt buộc');
-  }
-
-  // Thumbnail upload
+  // Thumbnail upload (handled by multer before this controller)
   let thumbnail = '';
   if (req.file) {
     thumbnail = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   }
+
+  // Parse JSON string arrays if sent as form-data strings
+  const parseArr = (val) => {
+    if (Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return []; }
+  };
 
   const course = await courseService.createCourse(
     req.user._id,
@@ -69,25 +78,23 @@ export const createCourse = asyncHandler(async (req, res) => {
       price: price !== undefined ? Number(price) : 0,
       status: status || 'draft',
       level, language, thumbnail,
-      requirements: requirements ? JSON.parse(requirements) : [],
-      objectives: objectives ? JSON.parse(objectives) : [],
-      tags: tags ? JSON.parse(tags) : [],
+      requirements: parseArr(requirements),
+      objectives:   parseArr(objectives),
+      tags:         parseArr(tags),
     }
   );
 
-  const statusMsg = course.status === 'published' ? 'Khoá học đã được xuất bản thành công!' : 'Khoá học được tạo dưới dạng bản nháp (draft)';
+  const msg = course.status === 'published'
+    ? 'Khoá học đã được xuất bản thành công!'
+    : 'Khoá học được tạo dưới dạng bản nháp (draft)';
 
-  res.status(201).json({
-    success: true,
-    data: course,
-    message: statusMsg,
-  });
+  res.status(201).json({ success: true, data: course, message: msg });
 });
 
 /**
  * @desc    Update course
  * @route   PUT /api/courses/:id
- * @access  Private (course owner instructor)
+ * @access  Private (course owner)
  */
 export const updateCourse = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
@@ -96,10 +103,10 @@ export const updateCourse = asyncHandler(async (req, res) => {
     updateData.thumbnail = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   }
 
-  // Parse JSON string arrays if sent as form-data
+  // Parse JSON string arrays from form-data
   ['requirements', 'objectives', 'tags'].forEach((key) => {
     if (typeof updateData[key] === 'string') {
-      try { updateData[key] = JSON.parse(updateData[key]); } catch { /* ignore */ }
+      try { updateData[key] = JSON.parse(updateData[key]); } catch { /* ignore malformed */ }
     }
   });
 
@@ -110,7 +117,7 @@ export const updateCourse = asyncHandler(async (req, res) => {
 /**
  * @desc    Publish course
  * @route   PATCH /api/courses/:id/publish
- * @access  Private (course owner instructor)
+ * @access  Private (course owner)
  */
 export const publishCourse = asyncHandler(async (req, res) => {
   const course = await courseService.publishCourse(req.params.id, req.user._id);
@@ -120,7 +127,7 @@ export const publishCourse = asyncHandler(async (req, res) => {
 /**
  * @desc    Delete course (draft only)
  * @route   DELETE /api/courses/:id
- * @access  Private (course owner instructor)
+ * @access  Private (course owner)
  */
 export const deleteCourse = asyncHandler(async (req, res) => {
   const result = await courseService.deleteCourse(req.params.id, req.user._id);
