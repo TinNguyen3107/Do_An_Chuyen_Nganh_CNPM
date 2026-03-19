@@ -2,7 +2,6 @@ import axios from 'axios';
 
 /**
  * Axios instance pre-configured for 26Tech LMS API
- * Auth-only module: only includes authAPI
  */
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
@@ -39,7 +38,7 @@ api.interceptors.response.use(
 );
 
 // ─────────────────────────────────────────────────────────────────
-// AUTH
+// AUTH (Phần của TV1 - Đã có uploadAvatar)
 // ─────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: (formData) => api.post('/auth/register', formData, {
@@ -56,7 +55,33 @@ export const authAPI = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+
+// CATEGORIES (PHẦN CỦA TV4 - Quản lý danh mục)
+// ─────────────────────────────────────────────────────────────────
+export const categoryAPI = {
+  getAll: (onlyActive = false) => api.get(`/categories${onlyActive ? '?active=true' : ''}`),
+  getById: (id) => api.get(`/categories/${id}`),
+  create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// INSTRUCTORS (PHẦN CỦA TV4 - Phê duyệt giảng viên)
+// ─────────────────────────────────────────────────────────────────
+export const instructorAPI = {
+  getMyApplication: () => api.get('/instructors/application'),
+  apply: (formData) => api.post('/instructors/apply', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Admin
+  getAllApplications: (params = {}) => api.get('/instructors/applications', { params }),
+  approve: (id) => api.patch(`/instructors/applications/${id}/approve`),
+  reject: (id, adminNote) => api.patch(`/instructors/applications/${id}/reject`, { adminNote }),
+};
+
 // COURSES
+
 // ─────────────────────────────────────────────────────────────────
 export const courseAPI = {
   getAll: (params = {}) => api.get('/courses', { params }),
@@ -72,27 +97,31 @@ export const courseAPI = {
   delete: (id) => api.delete(`/courses/${id}`),
 };
 
+
 export const categoryAPI = {
   getAll: () => api.get('/categories'),
 };
 
-// ─────────────────────────────────────────────────────────────────
 // ENROLLMENTS
 // ─────────────────────────────────────────────────────────────────
 export const enrollmentAPI = {
   enroll: (courseId) => api.post('/enrollments', { courseId }),
   getMyEnrollments: () => api.get('/enrollments/my'),
-  getMyCourses: () => api.get('/enrollments/my-courses'), // alias per spec
+
+  getMyCourses: () => api.get('/enrollments/my-courses'),
+
   checkEnrollment: (courseId) => api.get(`/enrollments/check/${courseId}`),
   getCourseStudents: (courseId) => api.get(`/enrollments/course/${courseId}`),
 };
 
 // ─────────────────────────────────────────────────────────────────
+
 // STATS (admin overview)
 // ─────────────────────────────────────────────────────────────────
 export const statsAPI = {
   getOverview: () => api.get('/stats/overview'),
 };
+
 
 // ─────────────────────────────────────────────────────────────────
 // USERS (admin)
