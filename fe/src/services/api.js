@@ -2,7 +2,6 @@ import axios from 'axios';
 
 /**
  * Axios instance pre-configured for 26Tech LMS API
- * Full API exports for all modules
  */
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
@@ -39,7 +38,7 @@ api.interceptors.response.use(
 );
 
 // ─────────────────────────────────────────────────────────────────
-// AUTH API
+// AUTH
 // ─────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: (formData) => api.post('/auth/register', formData, {
@@ -49,41 +48,18 @@ export const authAPI = {
   logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
+
   uploadAvatar: (formData) => api.put('/auth/profile/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+
 };
 
 // ─────────────────────────────────────────────────────────────────
-// COURSE API (SỬA ENDPOINT)
-// ─────────────────────────────────────────────────────────────────
-export const courseAPI = {
-  // Public routes
-  getAll: (params) => api.get('/courses', { params }),
-  getById: (id) => api.get(`/courses/${id}`),
-  getFeatured: (limit = 8) => api.get(`/courses?limit=${limit}&sort=featured`),
-  
-  // Instructor routes (cần xác thực)
-  getMyCourses: () => api.get('/courses/my-courses'),  // ĐÃ SỬA: từ '/instructor/me' thành '/my-courses'
-  create: (formData) => api.post('/courses', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  update: (id, formData) => api.put(`/courses/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  publish: (id) => api.patch(`/courses/${id}/publish`),  // THÊM hàm publish
-  delete: (id) => api.delete(`/courses/${id}`),
-  
-  // Student routes
-  enroll: (id) => api.post(`/courses/${id}/enroll`),
-  getEnrolled: () => api.get('/courses/student/me'),
-};
-
-// ─────────────────────────────────────────────────────────────────
-// CATEGORY API
+// CATEGORIES
 // ─────────────────────────────────────────────────────────────────
 export const categoryAPI = {
-  getAll: () => api.get('/categories'),
+  getAll: (onlyActive = false) => api.get(`/categories${onlyActive ? '?active=true' : ''}`),
   getById: (id) => api.get(`/categories/${id}`),
   create: (data) => api.post('/categories', data),
   update: (id, data) => api.put(`/categories/${id}`, data),
@@ -91,25 +67,62 @@ export const categoryAPI = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// USER API (dành cho Admin)
+// COURSES
+// ─────────────────────────────────────────────────────────────────
+export const courseAPI = {
+  getAll: (params = {}) => api.get('/courses', { params }),
+  getById: (id) => api.get(`/courses/${id}`),
+  getMyCourses: () => api.get('/courses/my-courses'),
+  create: (formData) => api.post('/courses', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  update: (id, formData) => api.put(`/courses/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  publish: (id) => api.patch(`/courses/${id}/publish`),
+  delete: (id) => api.delete(`/courses/${id}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// ENROLLMENTS
+// ─────────────────────────────────────────────────────────────────
+export const enrollmentAPI = {
+  enroll: (courseId) => api.post('/enrollments', { courseId }),
+  getMyEnrollments: () => api.get('/enrollments/my'),
+  getMyCourses: () => api.get('/enrollments/my-courses'), // alias per spec
+  checkEnrollment: (courseId) => api.get(`/enrollments/check/${courseId}`),
+  getCourseStudents: (courseId) => api.get(`/enrollments/course/${courseId}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// STATS (admin overview)
+// ─────────────────────────────────────────────────────────────────
+export const statsAPI = {
+  getOverview: () => api.get('/stats/overview'),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// INSTRUCTORS (applications)
+// ─────────────────────────────────────────────────────────────────
+export const instructorAPI = {
+  getMyApplication: () => api.get('/instructors/application'),
+  apply: (formData) => api.post('/instructors/apply', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Admin
+  getAllApplications: (params = {}) => api.get('/instructors/applications', { params }),
+  approve: (id) => api.patch(`/instructors/applications/${id}/approve`),
+  reject: (id, adminNote) => api.patch(`/instructors/applications/${id}/reject`, { adminNote }),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// USERS (admin)
 // ─────────────────────────────────────────────────────────────────
 export const userAPI = {
-  getAll: (params) => api.get('/users', { params }),
+  getAll: (params = {}) => api.get('/users', { params }),
   getById: (id) => api.get(`/users/${id}`),
-  update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`),
+  changeRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
-// ─────────────────────────────────────────────────────────────────
-// STATS API (dành cho Admin)
-// ─────────────────────────────────────────────────────────────────
-export const statsAPI = {
-  getDashboard: () => api.get('/stats/dashboard'),
-  getRevenue: (period) => api.get('/stats/revenue', { params: { period } }),
-  getCoursesStats: () => api.get('/stats/courses'),
-  getUsersStats: () => api.get('/stats/users'),
-};
-
-// Export default api instance
 export default api;

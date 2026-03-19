@@ -1,103 +1,74 @@
 import Course from '../models/Course.js';
 
-export const findPublished = async ({ category, search, level, minPrice, maxPrice, page = 1, limit = 12 } = {}) => {
+
+/**
+ * Course Repository
+ */
+
+export const findPublished = ({ category, search, level, minPrice, maxPrice, page = 1, limit = 12 } = {}) => {
   const query = { status: 'published' };
-  
+
   if (category) query.category = category;
   if (level) query.level = level;
-  
+
   if (search) {
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } }
+      { tags: { $in: [new RegExp(search, 'i')] } },
     ];
   }
-  
+
   if (minPrice !== undefined || maxPrice !== undefined) {
     query.price = {};
-    if (minPrice !== undefined) query.price.$gte = minPrice;
-    if (maxPrice !== undefined) query.price.$lte = maxPrice;
+    if (minPrice !== undefined) query.price.$gte = Number(minPrice);
+    if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
   }
-  
-  const skip = (page - 1) * limit;
-  
-  return await Course.find(query)
+
+  return Course.find(query)
+    .populate('instructor', 'name avatar')
     .populate('category', 'name slug')
-    .populate('instructor', 'name email')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
+    .sort({ totalStudents: -1, createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
 };
 
-export const countPublished = async () => {
-  return await Course.countDocuments({ status: 'published' });
-};
+export const countPublished = (query = {}) =>
+  Course.countDocuments({ status: 'published', ...query });
 
-export const findById = async (id) => {
-  return await Course.findById(id)
-    .populate('category', 'name slug description')
-    .populate('instructor', 'name email bio expertise');
-};
-
-export const findByIdAndInstructor = async (id, instructorId) => {
-  return await Course.findOne({ _id: id, instructor: instructorId })
+export const findById = (id) =>
+  Course.findById(id)
+    .populate('instructor', 'name avatar')
     .populate('category', 'name slug');
-};
 
-export const findByInstructor = async (instructorId) => {
-  return await Course.find({ instructor: instructorId })
-    .populate('category', 'name')
-    .sort({ createdAt: -1 });
-};
+export const findByIdAndInstructor = (courseId, instructorId) =>
+  Course.findOne({ _id: courseId, instructor: instructorId });
 
-export const createCourse = async (courseData) => {
-  const course = new Course(courseData);
-  return await course.save();
-};
+export const findByInstructor = (instructorId) =>
+  Course.find({ instructor: instructorId })
+    .populate('category', 'name slug')
+    .sort({ updatedAt: -1 });
 
-export const updateCourse = async (id, updateData) => {
-  return await Course.findByIdAndUpdate(id, updateData, { 
-    new: true, 
-    runValidators: true 
-  }).populate('category', 'name');
-};
+export const createCourse = (data) => Course.create(data);
 
-export const deleteCourse = async (id) => {
-  return await Course.findByIdAndDelete(id);
-};
+export const updateCourse = (id, data) =>
+  Course.findByIdAndUpdate(id, data, { new: true, runValidators: true })
+    .populate('instructor', 'name avatar')
+    .populate('category', 'name slug');
 
-export const findAllForAdmin = async ({ page = 1, limit = 20, status }) => {
+export const deleteCourse = (id) => Course.findByIdAndDelete(id);
+
+export const findAllForAdmin = ({ page = 1, limit = 20, status } = {}) => {
   const query = {};
   if (status) query.status = status;
-  
-  const skip = (page - 1) * limit;
-  
-  const courses = await Course.find(query)
-    .populate('category', 'name')
+  return Course.find(query)
     .populate('instructor', 'name email')
+    .populate('category', 'name')
     .sort({ createdAt: -1 })
-    .skip(skip)
+    .skip((page - 1) * limit)
     .limit(limit);
-    
-  const total = await Course.countDocuments(query);
-  
-  return {
-    courses,
-    total,
-    page: +page,
-    limit: +limit,
-    totalPages: Math.ceil(total / limit)
-  };
 };
 
-export default {
-  findPublished,
-  countPublished,
-  findById,
-  findByIdAndInstructor,
-  findByInstructor,
-  createCourse,
-  updateCourse,
-  deleteCourse,
-  findAllForAdmin
-};
+export const incrementStudentCount = (courseId) =>
+  Course.findByIdAndUpdate(courseId, { $inc: { totalStudents: 1 } });
+

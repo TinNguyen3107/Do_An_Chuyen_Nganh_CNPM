@@ -1,35 +1,54 @@
+/**
+ * Category Model — clean (no business-rule validation, only schema structure)
+ *
+ * Validation is handled by Joi validators in validators/category.validator.js
+ */
 import mongoose from 'mongoose';
 
-const categorySchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Tên danh mục là bắt buộc'],
-    unique: true,
-    trim: true
+const categorySchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    icon: {
+      type: String,
+      default: '',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
-  description: {
-    type: String,
-    trim: true
-  },
-  slug: {
-    type: String,
-    unique: true
-  },
-  icon: {
-    type: String,
-    default: '📚'
-  }
-}, { 
-  timestamps: true 
-});
+  { timestamps: true }
+);
 
-// Tạo slug từ name trước khi save
-categorySchema.pre('save', function(next) {
+// Infrastructure hook: auto-generate slug from name
+categorySchema.pre('save', function (next) {
   if (this.isModified('name')) {
-    this.slug = this.name.toLowerCase()
-      .replace(/[^a-zA-Z0-9]/g, '-')
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+      .trim();
   }
   next();
 });

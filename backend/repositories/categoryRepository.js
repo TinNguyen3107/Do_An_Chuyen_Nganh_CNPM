@@ -1,43 +1,28 @@
 import Category from '../models/Category.js';
 
-export const findAll = async () => {
-  return await Category.find({}).sort({ name: 1 });
+
+/**
+ * Category Repository
+ */
+
+export const findAll = (onlyActive = false) => {
+  const query = onlyActive ? { isActive: true } : {};
+  return Category.find(query).sort({ name: 1 });
 };
 
-export const findById = async (id) => {
-  return await Category.findById(id);
-};
+export const findById = (id) => Category.findById(id);
 
-export const findBySlug = async (slug) => {
-  return await Category.findOne({ slug });
-};
+export const findBySlug = (slug) => Category.findOne({ slug });
 
-export const createCategory = async (data) => {
-  const category = new Category(data);
-  return await category.save();
-};
+export const findByName = (name) =>
+  Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
 
-export const updateCategory = async (id, data) => {
-  return await Category.findByIdAndUpdate(id, data, { 
-    new: true, 
-    runValidators: true 
-  });
-};
+export const createCategory = (data) => Category.create(data);
 
-export const deleteCategory = async (id) => {
-  return await Category.findByIdAndDelete(id);
-};
+export const updateCategory = (id, data) =>
+  Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
 
-export const exists = async (filter) => {
-  return await Category.exists(filter);
-};
+export const deleteCategory = (id) => Category.findByIdAndDelete(id);
 
-export default {
-  findAll,
-  findById,
-  findBySlug,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  exists
-};
+export const count = () => Category.countDocuments();
+

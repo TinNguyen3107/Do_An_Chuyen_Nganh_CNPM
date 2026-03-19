@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+
 import { useEffect, useState } from 'react';
 import { courseAPI, categoryAPI } from '../../services/api';
 
@@ -231,3 +232,4 @@ export default function HomePage() {
     </div>
   );
 }
+

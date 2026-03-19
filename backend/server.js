@@ -14,7 +14,14 @@ import authRoutes from './routes/authRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 
-// Load environment variables
+
+import instructorRoutes from './routes/instructorRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+
+import courseRoutes from './routes/courseRoutes.js';
+import enrollmentRoutes from './routes/enrollmentRoutes.js';
+
+
 dotenv.config();
 
 // Debug environment variables
@@ -85,8 +92,13 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── API Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+
+// More routes will be added here as modules are implemented
+app.use('/api/instructors', instructorRoutes);
 app.use('/api/categories', categoryRoutes);
+
 app.use('/api/courses', courseRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
