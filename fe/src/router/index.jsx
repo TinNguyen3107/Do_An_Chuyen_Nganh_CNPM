@@ -4,6 +4,13 @@ import ProtectedRoute from '../components/ProtectedRoute';
 // ---- AUTH ----
 import AuthPage from '../pages/Auth/AuthPage';
 
+// ---- LAYOUT ----
+import DashboardLayout from '../layout/Dashboardlayout';
+
+// ---- ADMIN ----
+import AdminDashboard from '../pages/Admin/AdminDashboard';
+import ManageUsers from '../pages/Admin/ManageUsers';
+
 export default function AppRouter() {
   return (
     <Routes>
@@ -23,8 +30,20 @@ export default function AppRouter() {
         </ProtectedRoute>
       } />
 
+      {/* ADMIN ROUTES */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<ManageUsers />} />
+      </Route>
+
       {/* Redirect shortcuts for role-based redirects from AuthPage/LoginForm */}
-      <Route path="/admin/dashboard" element={<Navigate to="/dashboard" replace />} />
       <Route path="/instructor/dashboard" element={<Navigate to="/dashboard" replace />} />
       <Route path="/instructor/pending" element={<Navigate to="/dashboard" replace />} />
       <Route path="/student/dashboard" element={<Navigate to="/dashboard" replace />} />
