@@ -55,4 +55,54 @@ export const authAPI = {
   }),
 };
 
+// ─────────────────────────────────────────────────────────────────
+// COURSES
+// ─────────────────────────────────────────────────────────────────
+export const courseAPI = {
+  getAll: (params = {}) => api.get('/courses', { params }),
+  getById: (id) => api.get(`/courses/${id}`),
+  getMyCourses: () => api.get('/courses/my-courses'),
+  create: (formData) => api.post('/courses', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  update: (id, formData) => api.put(`/courses/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  publish: (id) => api.patch(`/courses/${id}/publish`),
+  delete: (id) => api.delete(`/courses/${id}`),
+};
+
+export const categoryAPI = {
+  getAll: () => api.get('/categories'),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// ENROLLMENTS
+// ─────────────────────────────────────────────────────────────────
+export const enrollmentAPI = {
+  enroll: (courseId) => api.post('/enrollments', { courseId }),
+  getMyEnrollments: () => api.get('/enrollments/my'),
+  getMyCourses: () => api.get('/enrollments/my-courses'), // alias per spec
+  checkEnrollment: (courseId) => api.get(`/enrollments/check/${courseId}`),
+  getCourseStudents: (courseId) => api.get(`/enrollments/course/${courseId}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// STATS (admin overview)
+// ─────────────────────────────────────────────────────────────────
+export const statsAPI = {
+  getOverview: () => api.get('/stats/overview'),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// USERS (admin)
+// ─────────────────────────────────────────────────────────────────
+export const userAPI = {
+  getAll: (params = {}) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  changeRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
+  toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
+};
+
+
 export default api;

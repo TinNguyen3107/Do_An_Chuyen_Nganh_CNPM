@@ -10,6 +10,8 @@ import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 
 // ─── Routes ───────────────────────────────────────────────────────
 import authRoutes from './routes/authRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import enrollmentRoutes from './routes/enrollmentRoutes.js';
 
 dotenv.config();
 
@@ -37,6 +39,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ─── API Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 // More routes will be added here as modules are implemented
+app.use('/api/courses', courseRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
