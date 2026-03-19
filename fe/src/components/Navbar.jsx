@@ -42,6 +42,12 @@ export default function Navbar() {
             </span>
           </Link>
 
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-6">
+            {navLink('/courses', 'Khoá học')}
+            {user && navLink('/student/dashboard', 'Khóa học của tôi')}
+          </div>
+
           {/* Right side */}
           <div className="flex items-center gap-3">
             {!user ? (

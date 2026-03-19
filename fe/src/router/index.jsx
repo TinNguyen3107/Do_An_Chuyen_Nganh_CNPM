@@ -6,33 +6,22 @@ import ProtectedRoute from '../components/ProtectedRoute';
 // ---- [THÀNH VIÊN 1] ----
 import AuthPage from '../pages/Auth/AuthPage';
 
-// ---- PUBLIC (Bạn đã copy) ----
+
+// ---- PUBLIC / GUEST ----
 import HomePage from '../pages/Public/HomePage';
 import CourseList from '../pages/Public/CourseList';
 import CourseDetail from '../pages/Public/CourseDetail';
+
 
 // ---- [THÀNH VIÊN 4] - PHẦN VIỆC CỦA BẠN ----
 import PendingApproval from '../pages/Instructor/PendingApproval';
 import ManageInstructors from '../pages/Admin/ManageInstructors';
 import ManageCategories from '../pages/Admin/ManageCategories';
 
+// ---- STUDENT ----
+import StudentDashboard from '../pages/Student/StudentDashboard';
+import MyCourses from '../pages/Student/MyCourses';
 
-// =========================================================================
-// 🚀 THỦ THUẬT: TẠO PLACEHOLDER CHO CÁC TRANG CÒN THIẾU CỦA TEAM
-// Khi nào người khác làm xong file thật, bạn chỉ việc xoá các dòng này 
-// và dùng lệnh import bình thường. Giờ thì cứ để đây cho code khỏi lỗi!
-// =========================================================================
-const StudentDashboard = () => <div className="p-10 text-white text-xl">Trang Tổng quan Học viên (Đang phát triển...)</div>;
-const MyCourses = () => <div className="p-10 text-white text-xl">Khoá học của tôi (Đang phát triển...)</div>;
-const InstructorDashboard = () => <div className="p-10 text-white text-xl">Tổng quan Giảng viên (Đang phát triển...)</div>;
-const CreateCourse = () => <div className="p-10 text-white text-xl">Tạo khoá học (Đang phát triển...)</div>;
-const EditCourse = () => <div className="p-10 text-white text-xl">Chỉnh sửa khoá học (Đang phát triển...)</div>;
-const AdminDashboard = () => <div className="p-10 text-white text-xl">Tổng quan Admin (Đang phát triển...)</div>;
-const ManageUsers = () => <div className="p-10 text-white text-xl">Quản lý Người dùng (Đang phát triển...)</div>;
-// =========================================================================
-
-
-// ---- ICONS CHO SIDEBAR ----
 const I = {
   Student: () => <span>🎓</span>,
   Course: () => <span>📚</span>,
@@ -49,7 +38,6 @@ export default function AppRouter() {
       {/* 1. PUBLIC ROUTES */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
-        {/* <Route path="/" element={<Navigate to="/auth" replace />} /> */}
         <Route path="/courses" element={<CourseList />} />
         <Route path="/courses/:id" element={<CourseDetail />} />
       </Route>
@@ -69,6 +57,7 @@ export default function AppRouter() {
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/my-courses" element={<MyCourses />} />
       </Route>
+
 
       {/* 4. INSTRUCTOR DASHBOARD */}
       <Route element={
@@ -107,6 +96,7 @@ export default function AppRouter() {
         <Route path="/admin/instructors" element={<ManageInstructors />} /> {/* TV4 */}
         <Route path="/admin/categories" element={<ManageCategories />} />   {/* TV4 */}
       </Route>
+
 
       {/* 7. FALLBACKS */}
       <Route path="/unauthorized" element={
