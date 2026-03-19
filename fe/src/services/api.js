@@ -125,4 +125,15 @@ export const userAPI = {
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
+export const statsAPI = {
+  getOverview: () => api.get('/stats/overview'),
+};
+
+export const userAPI = {
+  getAll: (params = {}) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  changeRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
+  toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
+};
+
 export default api;
