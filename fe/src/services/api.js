@@ -52,7 +52,8 @@ export const authAPI = {
   uploadAvatar: (formData) => api.put('/auth/profile/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (resetToken, new_password) => api.post(`/auth/reset-password/${resetToken}`, { token: resetToken, new_password }),
 };
 
 // ─────────────────────────────────────────────────────────────────

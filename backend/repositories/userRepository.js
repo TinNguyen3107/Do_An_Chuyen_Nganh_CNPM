@@ -41,3 +41,9 @@ export const findPendingInstructors = () =>
   User.find({ role: 'instructor', instructorStatus: 'pending' })
     .select('-password')
     .sort({ createdAt: -1 });
+
+export const findByResetToken = (resetPasswordToken) =>
+  User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
