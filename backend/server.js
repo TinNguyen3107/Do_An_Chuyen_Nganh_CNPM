@@ -21,7 +21,7 @@ dotenv.config();
 
 // Connect to MongoDB & Initialize Admin
 connectDB().then(() => {
-  // initAdmin(); // Đã tắt tự động tạo tài khoản admin demo
+  initAdmin();
 });
 
 const app = express();
