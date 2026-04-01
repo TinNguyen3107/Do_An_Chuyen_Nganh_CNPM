@@ -143,3 +143,45 @@ export const uploadAvatarHandler = asyncHandler(async (req, res) => {
     message: 'Cập nhật ảnh đại diện thành công',
   });
 });
+
+/**
+ * @desc    Forgot password
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    res.status(400);
+    throw new Error('Vui lòng cung cấp email');
+  }
+
+  await authService.forgotPassword(email);
+
+  res.json({
+    success: true,
+    message: 'Email xác nhận đã được gửi',
+  });
+});
+
+/**
+ * @desc    Reset password
+ * @route   POST /api/auth/reset-password/:resetToken
+ * @access  Public
+ */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { resetToken } = req.params;
+  const { new_password } = req.body;
+
+  if (!new_password) {
+    res.status(400);
+    throw new Error('Vui lòng cung cấp mật khẩu mới');
+  }
+
+  await authService.resetPassword(resetToken, new_password);
+
+  res.json({
+    success: true,
+    message: 'Đặt lại mật khẩu thành công',
+  });
+});

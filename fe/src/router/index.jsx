@@ -5,6 +5,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 // ---- AUTH ----
 import AuthPage from '../pages/Auth/AuthPage';
+import ForgotPassword from '../pages/Auth/ForgotPassword';
+import ResetPassword from '../pages/Auth/ResetPassword';
 
 // ---- PUBLIC / GUEST ----
 import HomePage from '../pages/Public/HomePage';
@@ -56,6 +58,8 @@ export default function AppRouter() {
 
       {/* AUTH ROUTE */}
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* STUDENT DASHBOARD */}
       <Route element={<ProtectedRoute roles={['student', 'admin', 'instructor']}><DashboardLayout title="Học Viên" sidebarLinks={[
