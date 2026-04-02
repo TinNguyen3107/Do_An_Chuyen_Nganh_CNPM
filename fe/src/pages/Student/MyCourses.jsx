@@ -101,6 +101,21 @@ export default function MyCourses() {
                     >
                       Vào học →
                     </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/courses/${course._id}`}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-all border border-slate-700"
+                      >
+                        Xem chi tiết
+                      </Link>
+
+                      <Link
+                        to={`/courses/${course._id}#reviews`}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-all"
+                      >
+                        Đánh giá
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

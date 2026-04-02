@@ -16,6 +16,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import enrollmentRoutes from './routes/enrollmentRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
