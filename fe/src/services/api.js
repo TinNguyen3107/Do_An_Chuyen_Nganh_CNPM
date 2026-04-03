@@ -81,16 +81,19 @@ export const courseAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   publish: (id) => api.patch(`/courses/${id}/publish`),
+  submit: (id) => api.post(`/courses/${id}/submit`),
   delete: (id) => api.delete(`/courses/${id}`),
 };
 
 export const adminCourseReviewAPI = {
-  getPending: (params = {}) => api.get('/admin-review/pending', { params }),
-  getApproved: (params = {}) => api.get('/admin-review/approved', { params }),
-  getRejected: (params = {}) => api.get('/admin-review/rejected', { params }),
-  getByIdForReview: (id) => api.get(`/admin-review/${id}/review`),
-  approve: (id) => api.patch(`/admin-review/${id}/approve`),
-  reject: (id, rejectionReason) => api.patch(`/admin-review/${id}/reject`, { rejectionReason }),
+  getPending:        (params = {}) => api.get('/admin-review/pending',         { params }),
+  getPendingNew:     (params = {}) => api.get('/admin-review/pending-new',     { params }),
+  getPendingUpdates: (params = {}) => api.get('/admin-review/pending-updates', { params }),
+  getApproved:       (params = {}) => api.get('/admin-review/approved',        { params }),
+  getRejected:       (params = {}) => api.get('/admin-review/rejected',        { params }),
+  getByIdForReview:  (id)          => api.get(`/admin-review/${id}/review`),
+  approve:           (id)          => api.patch(`/admin-review/${id}/approve`),
+  reject:            (id, rejectionReason) => api.patch(`/admin-review/${id}/reject`, { rejectionReason }),
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -144,5 +147,27 @@ export const userAPI = {
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
-export default api;
+// ─────────────────────────────────────────────────────────────────
+// CHAPTERS
+// ─────────────────────────────────────────────────────────────────
+export const chapterAPI = {
+  getByCourse: (courseId) => api.get(`/courses/${courseId}/chapters`),
+  create: (courseId, data) => api.post(`/courses/${courseId}/chapters`, data),
+  getById: (chapterId) => api.get(`/chapters/${chapterId}`),
+  update: (chapterId, data) => api.put(`/chapters/${chapterId}`, data),
+  delete: (chapterId) => api.delete(`/chapters/${chapterId}`),
+};
 
+// ─────────────────────────────────────────────────────────────────
+// LESSONS
+// ─────────────────────────────────────────────────────────────────
+export const lessonAPI = {
+  getByCourse: (courseId) => api.get(`/courses/${courseId}/lessons`),
+  getByChapter: (chapterId) => api.get(`/chapters/${chapterId}/lessons`),
+  create: (chapterId, data) => api.post(`/chapters/${chapterId}/lessons`, data),
+  getById: (lessonId) => api.get(`/lessons/${lessonId}`),
+  update: (lessonId, data) => api.put(`/lessons/${lessonId}`, data),
+  delete: (lessonId) => api.delete(`/lessons/${lessonId}`),
+};
+
+export default api;
