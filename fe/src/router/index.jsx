@@ -16,8 +16,8 @@ import CourseDetail from '../pages/Public/CourseDetail';
 // ---- STUDENT ----
 import StudentDashboard from '../pages/Student/StudentDashboard';
 import MyCourses from '../pages/Student/MyCourses';
-
 import ProfilePage from '../pages/Student/ProfilePage';
+import LearningPage from '../pages/Student/LearningPage';
 
 
 // ---- INSTRUCTOR ----
@@ -41,7 +41,6 @@ const I = {
   Admin: () => <span>👑</span>,
   Users: () => <span>👥</span>,
   Categories: () => <span>📁</span>,
-
   Profile: () => <span>👤</span>,
 
 };
@@ -71,6 +70,7 @@ export default function AppRouter() {
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/my-courses" element={<MyCourses />} />
         <Route path="/student/profile" element={<ProfilePage />} />
+        <Route path="/student/learning/:courseId" element={<LearningPage />} />
       </Route>
 
       {/* INSTRUCTOR DASHBOARD */}

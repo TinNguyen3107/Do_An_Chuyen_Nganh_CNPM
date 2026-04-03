@@ -84,10 +84,15 @@ export default function MyCourses() {
                   <div className="mb-4">
                     <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                       <span>Tiến độ học tập</span>
-                      <span className="font-semibold text-blue-400">0%</span>
+                      <span className="font-semibold text-blue-400">
+                        {enrollment.progress || 0}%
+                      </span>
                     </div>
                     <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full w-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500" />
+                      <div 
+                        className="h-full w-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${enrollment.progress || 0}%` }}
+                      />
                     </div>
                   </div>
 
@@ -96,14 +101,14 @@ export default function MyCourses() {
                       Đăng ký: {new Date(enrollment.enrolledAt).toLocaleDateString('vi-VN')}
                     </span>
                     <Link
-                      to={`/courses/${course._id}`}
+                      to={`/student/learning/${course._id}`}
                       className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-all"
                     >
                       Vào học →
                     </Link>
                     <div className="flex items-center gap-2">
                       <Link
-                        to={`/courses/${course._id}`}
+                        to={`/student/learning/${course._id}`}
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-all border border-slate-700"
                       >
                         Xem chi tiết
