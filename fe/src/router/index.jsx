@@ -18,6 +18,9 @@ import StudentDashboard from '../pages/Student/StudentDashboard';
 import MyCourses from '../pages/Student/MyCourses';
 import ProfilePage from '../pages/Student/ProfilePage';
 import LearningPage from '../pages/Student/LearningPage';
+import Checkout from '../pages/Student/Checkout';
+import PaymentResult from '../pages/Student/PaymentResult';
+import PaymentHistory from '../pages/Student/PaymentHistory';
 
 
 // ---- INSTRUCTOR ----
@@ -25,6 +28,7 @@ import InstructorDashboard from '../pages/Instructor/InstructorDashboard';
 import CreateCourse from '../pages/Instructor/CreateCourse';
 import EditCourse from '../pages/Instructor/EditCourse';
 import PendingApproval from '../pages/Instructor/PendingApproval';
+import InstructorWallet from '../pages/Instructor/InstructorWallet';
 
 // ---- ADMIN ----
 import AdminDashboard from '../pages/Admin/AdminDashboard';
@@ -33,6 +37,7 @@ import ManageInstructors from '../pages/Admin/ManageInstructors';
 import ManageCategories from '../pages/Admin/ManageCategories';
 import AdminCourseReview from '../pages/Admin/AdminCourseReview';
 import AdminCourseUpdateReview from '../pages/Admin/AdminCourseUpdateReview';
+import AdminPayouts from '../pages/Admin/AdminPayouts';
 
 // ---- ICONS ----
 const I = {
@@ -44,7 +49,7 @@ const I = {
   Users: () => <span>👥</span>,
   Categories: () => <span>📁</span>,
   Profile: () => <span>👤</span>,
-
+  Payment: () => <span>💳</span>,
 };
 
 export default function AppRouter() {
@@ -62,15 +67,28 @@ export default function AppRouter() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
+      {/* CHECKOUT (protected, with MainLayout) */}
+      <Route element={<MainLayout />}>
+        <Route path="/checkout/:courseId" element={
+          <ProtectedRoute roles={['student', 'admin', 'instructor']}>
+            <Checkout />
+          </ProtectedRoute>
+        } />
+      </Route>
+
+      {/* PAYMENT RESULT (public — MoMo redirect URL) */}
+      <Route path="/payment-result" element={<PaymentResult />} />
+
       {/* STUDENT DASHBOARD */}
       <Route element={<ProtectedRoute roles={['student', 'admin', 'instructor']}><DashboardLayout title="Học Viên" sidebarLinks={[
         { path: '/student/dashboard', label: 'Tổng quan', icon: <I.Student /> },
         { path: '/student/my-courses', label: 'Khoá học của tôi', icon: <I.Course /> },
-
+        { path: '/student/payment-history', label: 'Lịch sử thanh toán', icon: <I.Payment /> },
         { path: '/student/profile', label: 'Hồ sơ cá nhân', icon: <I.Profile /> },
       ]} /></ProtectedRoute>}>
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/my-courses" element={<MyCourses />} />
+        <Route path="/student/payment-history" element={<PaymentHistory />} />
         <Route path="/student/profile" element={<ProfilePage />} />
         <Route path="/student/learning/:courseId" element={<LearningPage />} />
       </Route>
@@ -78,10 +96,13 @@ export default function AppRouter() {
       {/* INSTRUCTOR DASHBOARD */}
       <Route element={<ProtectedRoute roles={['instructor', 'admin']} requireApproved><DashboardLayout title="Giảng Viên" sidebarLinks={[
         { path: '/instructor/dashboard', label: 'Quản lý khoá học', icon: <I.Instructor /> },
+        { path: '/instructor/create-course', label: 'Tạo khoá học mới', icon: <I.Plus /> },
+        { path: '/instructor/wallet', label: 'Ví của tôi', icon: <I.Payment /> },
       ]} /></ProtectedRoute>}>
         <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
         <Route path="/instructor/create-course" element={<CreateCourse />} />
         <Route path="/instructor/edit-course/:id" element={<EditCourse />} />
+        <Route path="/instructor/wallet" element={<InstructorWallet />} />
       </Route>
 
       {/* INSTRUCTOR - PENDING */}
@@ -95,6 +116,7 @@ export default function AppRouter() {
         { path: '/admin/courses-review', label: 'Duyệt khoá học', icon: <I.Course /> },
         { path: '/admin/course-updates', label: 'Duyệt cập nhật', icon: <span>🔄</span> },
         { path: '/admin/categories', label: 'Danh mục', icon: <I.Categories /> },
+        { path: '/admin/payouts', label: 'Chi trả GV', icon: <I.Payment /> },
       ]} /></ProtectedRoute>}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<ManageUsers />} />
@@ -102,6 +124,7 @@ export default function AppRouter() {
         <Route path="/admin/courses-review" element={<AdminCourseReview />} />
         <Route path="/admin/course-updates" element={<AdminCourseUpdateReview />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
+        <Route path="/admin/payouts" element={<AdminPayouts />} />
       </Route>
 
       {/* FALLBACK */}

@@ -59,6 +59,13 @@ export default function CourseDetail() {
 
   const handleEnroll = async () => {
     if (!user) { navigate('/auth'); return; }
+
+    // For paid courses, redirect to checkout page
+    if (!course.isFree) {
+      navigate(`/checkout/${id}`);
+      return;
+    }
+
     setEnrolling(true);
     try {
       await enrollmentAPI.enroll(id);
@@ -66,6 +73,11 @@ export default function CourseDetail() {
       setReloadCourse(prev => prev + 1);
       toast.success('Đăng ký khoá học thành công!');
     } catch (err) {
+      // If backend returns requiresPayment (402), redirect to checkout
+      if (err.response?.status === 402 && err.response?.data?.requiresPayment) {
+        navigate(`/checkout/${id}`);
+        return;
+      }
       toast.error(err.response?.data?.message || 'Lỗi khi đăng ký khoá học');
     } finally {
       setEnrolling(false);
