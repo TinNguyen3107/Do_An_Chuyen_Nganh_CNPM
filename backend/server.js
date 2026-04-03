@@ -19,6 +19,8 @@ import statsRoutes from './routes/statsRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import learningRoutes from './routes/learningRoutes.js';
+import courseReviewRoutes from './routes/courseReviewRoutes.js';
+
 
 dotenv.config();
 
@@ -54,6 +56,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin-review', courseReviewRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
