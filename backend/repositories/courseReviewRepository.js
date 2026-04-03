@@ -104,6 +104,32 @@ export const findRejectedCourses = async ({ page = 1, limit = 10 } = {}) => {
     .sort({ reviewedAt: -1 });
 };
 
+/** Pending MỚI — lần đầu gửi duyệt (reviewedAt = null) */
+export const findPendingNewCourses = async ({ page = 1, limit = 10 } = {}) => {
+  const skip = (page - 1) * limit;
+  return Course.find({ status: 'published', reviewStatus: 'pending', reviewedAt: null })
+    .populate('instructor', 'name email')
+    .populate('category', 'name')
+    .skip(skip)
+    .limit(limit)
+    .sort({ submittedAt: -1 });
+};
+export const countPendingNewCourses = async () =>
+  Course.countDocuments({ status: 'published', reviewStatus: 'pending', reviewedAt: null });
+
+/** Pending CẬP NHẬT — đã được duyệt/từ chối 1 lần, giờ gửi lại (reviewedAt != null) */
+export const findPendingUpdateCourses = async ({ page = 1, limit = 10 } = {}) => {
+  const skip = (page - 1) * limit;
+  return Course.find({ status: 'published', reviewStatus: 'pending', reviewedAt: { $ne: null } })
+    .populate('instructor', 'name email')
+    .populate('category', 'name')
+    .skip(skip)
+    .limit(limit)
+    .sort({ submittedAt: -1 });
+};
+export const countPendingUpdateCourses = async () =>
+  Course.countDocuments({ status: 'published', reviewStatus: 'pending', reviewedAt: { $ne: null } });
+
 export default {
   findPendingCourses,
   countPendingCourses,
@@ -114,4 +140,8 @@ export default {
   findRejectedCourses,
   countApprovedCourses,
   countRejectedCourses,
+  findPendingNewCourses,
+  countPendingNewCourses,
+  findPendingUpdateCourses,
+  countPendingUpdateCourses,
 };

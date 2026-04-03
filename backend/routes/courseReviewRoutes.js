@@ -10,6 +10,8 @@ import {
   rejectCourse,
   getApprovedCourses,
   getRejectedCourses,
+  getPendingNewCourses,
+  getPendingUpdateCourses,
 } from '../controllers/courseReviewController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { authorize } from '../middlewares/roleMiddleware.js';
@@ -30,6 +32,20 @@ router.get(
   protect,
   authorize('admin'),
   getPendingCourses
+);
+
+router.get(
+  '/pending-new',
+  protect,
+  authorize('admin'),
+  getPendingNewCourses
+);
+
+router.get(
+  '/pending-updates',
+  protect,
+  authorize('admin'),
+  getPendingUpdateCourses
 );
 
 /**
