@@ -78,7 +78,6 @@ export default function AppRouter() {
       {/* INSTRUCTOR DASHBOARD */}
       <Route element={<ProtectedRoute roles={['instructor', 'admin']} requireApproved><DashboardLayout title="Giảng Viên" sidebarLinks={[
         { path: '/instructor/dashboard', label: 'Quản lý khoá học', icon: <I.Instructor /> },
-        { path: '/instructor/create-course', label: 'Tạo khoá học mới', icon: <I.Plus /> },
       ]} /></ProtectedRoute>}>
         <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
         <Route path="/instructor/create-course" element={<CreateCourse />} />
