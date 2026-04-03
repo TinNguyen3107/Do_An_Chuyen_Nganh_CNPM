@@ -58,6 +58,25 @@ const courseSchema = new mongoose.Schema(
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
     },
+    // ── Admin Review Status ────────────────────────────────────────
+    reviewStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
     // Aggregated stats (updated on enrollment / review)
     totalStudents: { type: Number, default: 0 },
     averageRating:  { type: Number, default: 0 },

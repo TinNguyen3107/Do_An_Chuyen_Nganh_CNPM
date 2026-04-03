@@ -84,6 +84,15 @@ export const courseAPI = {
   delete: (id) => api.delete(`/courses/${id}`),
 };
 
+export const adminCourseReviewAPI = {
+  getPending: (params = {}) => api.get('/admin-review/pending', { params }),
+  getApproved: (params = {}) => api.get('/admin-review/approved', { params }),
+  getRejected: (params = {}) => api.get('/admin-review/rejected', { params }),
+  getByIdForReview: (id) => api.get(`/admin-review/${id}/review`),
+  approve: (id) => api.patch(`/admin-review/${id}/approve`),
+  reject: (id, rejectionReason) => api.patch(`/admin-review/${id}/reject`, { rejectionReason }),
+};
+
 // ─────────────────────────────────────────────────────────────────
 // ENROLLMENTS
 // ─────────────────────────────────────────────────────────────────

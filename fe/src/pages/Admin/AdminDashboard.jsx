@@ -71,6 +71,7 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 gap-3">
                         {[
                             { to: '/admin/instructors', icon: '✅', label: 'Duyệt giảng viên', desc: 'Xét duyệt hồ sơ giảng viên', color: 'hover:border-amber-500/30 hover:bg-amber-500/5' },
+                            { to: '/admin/courses-review', icon: '📚', label: 'Duyệt khoá học', desc: 'Xét duyệt khoá học mới', color: 'hover:border-rose-500/30 hover:bg-rose-500/5' },
                             { to: '/admin/categories', icon: '📁', label: 'Quản lý danh mục', desc: 'Thêm, sửa, xoá danh mục', color: 'hover:border-blue-500/30 hover:bg-blue-500/5' },
                             { to: '/admin/users', icon: '👥', label: 'Quản lý người dùng', desc: 'Xem và phân quyền người dùng', color: 'hover:border-green-500/30 hover:bg-green-500/5' },
                             { to: '/admin/dashboard', icon: '📊', label: 'Báo cáo thống kê', desc: 'Xem báo cáo chi tiết', color: 'hover:border-purple-500/30 hover:bg-purple-500/5' },
