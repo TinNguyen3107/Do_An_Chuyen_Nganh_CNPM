@@ -1,8 +1,9 @@
+
 TÊN ĐỀ TÀI: XÂY DỰNG HỆ THỐNG QUẢN LÝ KHOÁ HỌC TRỰC TUYẾN 26Tech
 
 1. Giới thiệu chung
-
 Trong những năm gần đây, giáo dục trực tuyến đang phát triển mạnh mẽ và trở thành xu hướng phổ biến trong đào tạo hiện đại. Nhu cầu học tập mọi lúc, mọi nơi của học viên ngày càng tăng, kéo theo yêu cầu về một hệ thống quản lý khóa học trực tuyến linh hoạt, dễ sử dụng và đảm bảo an toàn dữ liệu.
+Dự án này hướng tới xây dựng một nền tảng LMS cơ bản, cho phép giảng viên tạo và quản lý nội dung khóa học, đồng thời hỗ trợ học viên đăng ký, thanh toán và học tập trực tuyến với khả năng theo dõi tiến độ hiệu quả.
 
 Dự án này hướng tới xây dựng một nền tảng LMS cơ bản, cho phép giảng viên tạo và quản lý nội dung khóa học, đồng thời hỗ trợ học viên đăng ký, thanh toán và học tập trực tuyến với khả năng theo dõi tiến độ hiệu quả.
 
@@ -98,3 +99,4 @@ Database: MongoDB
 6. Kết luận sơ bộ
 
 Đề tài giúp sinh viên rèn luyện kỹ năng làm việc nhóm, phân tích yêu cầu, thiết kế hệ thống và triển khai một ứng dụng web hoàn chỉnh theo quy trình kỹ nghệ phần mềm. Sản phẩm có thể được sử dụng như một mô hình tham khảo cho các hệ thống học tập trực tuyến quy mô nhỏ trong môi trường học tập .
+
