@@ -26,13 +26,26 @@ export const getCourseLessons = asyncHandler(async (req, res) => {
   const lessons = await lessonsCollection
     .find({
       course: new mongoose.Types.ObjectId(courseId),
-      isPublished: true,
     })
     .sort({ order: 1 })
     .toArray();
 
+  // Map snake_case DB fields → camelCase expected by LearningPage
+  const mapped = lessons.map((l) => ({
+    _id:         l._id,
+    title:       l.title,
+    type:        l.type,
+    order:       l.order,
+    chapter:     l.chapter,
+    // field mapping
+    videoUrl:    l.video_url    || l.videoUrl    || '',
+    textContent: l.text_content || l.textContent || '',
+    duration:    l.duration     || 0,
+    questions:   l.questions    || [],
+  }));
+
   res.json({
     success: true,
-    data: lessons,
+    data: mapped,
   });
 });
