@@ -96,6 +96,15 @@ export const enrollmentAPI = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// REVIEWS
+//
+export const reviewAPI = {
+  getCourseReviews: (courseId) => api.get(`/reviews/course/${courseId}`),
+  getMyReview: (courseId) => api.get(`/reviews/course/${courseId}/my-review`),
+  createOrUpdate: (courseId, data) => api.post(`/reviews/course/${courseId}`, data),
+};
+
+// ─────────────────────────────────────────────────────────────────
 // STATS (admin overview)
 // ─────────────────────────────────────────────────────────────────
 export const statsAPI = {
