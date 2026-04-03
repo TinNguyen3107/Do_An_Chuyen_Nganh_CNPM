@@ -90,6 +90,7 @@ const courseSchema = new mongoose.Schema(
 
     publishedAt: { type: Date, default: null },
     submittedAt: { type: Date, default: null },
+    hasPendingChanges: { type: Boolean, default: false }, // true khi GV sửa curriculum sau khi approved
   },
   { timestamps: true }
 );

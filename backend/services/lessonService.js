@@ -57,14 +57,13 @@ export const createLesson = async (chapterId, instructorId, data) => {
     order,
   });
 
-  // 5. Cập nhật totalLectures và totalDuration trên Course
+  // 5. Cập nhật totalLectures, totalDuration và hasPendingChanges trên Course
   const totalLectures = await lessonRepo.countByCourse(chapter.course);
   const lessons = await lessonRepo.findByCourse(chapter.course);
   const totalDuration = lessons.reduce((sum, l) => sum + (l.duration || 0), 0);
-  await courseRepo.updateCourse(chapter.course, {
-    totalLectures,
-    totalDuration: Math.round(totalDuration / 60),
-  });
+  const updatePayload = { totalLectures, totalDuration: Math.round(totalDuration / 60) };
+  if (course.reviewStatus === 'approved') updatePayload.hasPendingChanges = true;
+  await courseRepo.updateCourse(chapter.course, updatePayload);
 
   return lesson;
 };
@@ -89,7 +88,10 @@ export const updateLesson = async (lessonId, instructorId, data) => {
   // 3. Update
   const updated = await lessonRepo.update(lessonId, data);
 
-  // 4. Cập nhật totalDuration nếu duration thay đổi
+  // 4. Cập nhật totalDuration và hasPendingChanges
+  if (course.reviewStatus === 'approved') {
+    await courseRepo.updateCourse(lesson.course, { hasPendingChanges: true });
+  }
   if (data.duration !== undefined) {
     const lessons = await lessonRepo.findByCourse(lesson.course);
     const totalDuration = lessons.reduce((sum, l) => sum + (l.duration || 0), 0);
@@ -121,11 +123,13 @@ export const deleteLesson = async (lessonId, instructorId) => {
   // 3. Xoá
   await lessonRepo.remove(lessonId);
 
-  // 4. Cập nhật totalLectures
+  // 4. Cập nhật totalLectures và hasPendingChanges
   const totalLectures = await lessonRepo.countByCourse(courseId);
   const lessons = await lessonRepo.findByCourse(courseId);
   const totalDuration = lessons.reduce((sum, l) => sum + (l.duration || 0), 0);
-  await courseRepo.updateCourse(courseId, { totalLectures, totalDuration: Math.round(totalDuration / 60) });
+  const delPayload = { totalLectures, totalDuration: Math.round(totalDuration / 60) };
+  if (course.reviewStatus === 'approved') delPayload.hasPendingChanges = true;
+  await courseRepo.updateCourse(courseId, delPayload);
 
   return { message: 'Xoá bài học thành công' };
 };

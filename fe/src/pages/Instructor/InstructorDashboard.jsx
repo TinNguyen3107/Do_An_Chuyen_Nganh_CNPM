@@ -353,7 +353,7 @@ export default function InstructorDashboard() {
                           >Gửi lại</button>
                         )}
 
-                        {c.status === 'published' && c.reviewStatus === 'approved' && (
+                        {c.status === 'published' && c.reviewStatus === 'approved' && c.hasPendingChanges && (
                            <button
                              onClick={() => handleSubmit(c)}
                              title="Gửi bản cập nhật mới cho Admin"

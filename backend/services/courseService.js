@@ -145,7 +145,14 @@ export const submitCourse = async (courseId, instructorId) => {
     throw new Error('Khoá học đang được chờ duyệt, vui lòng chờ Admin xem xét');
   }
 
-  // 3. Kiểm tra có ít nhất 1 lesson
+  // 3. Nếu đã approved → phải có thay đổi curriculum mới được gửi cập nhật
+  if (course.reviewStatus === 'approved') {
+    if (!course.hasPendingChanges) {
+      throw new Error('Bạn chưa thay đổi bài giảng nào. Hãy thêm, sửa hoặc xoá bài học trước khi gửi cập nhật');
+    }
+  }
+
+  // 4. Kiểm tra có ít nhất 1 lesson
   const { default: Lesson } = await import('../models/Lesson.js');
   const lessonCount = await Lesson.countDocuments({ course: courseId });
   if (lessonCount === 0) {
