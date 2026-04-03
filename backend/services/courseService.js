@@ -124,3 +124,35 @@ export const deleteCourse = async (courseId, instructorId) => {
 export const getAllCoursesAdmin = async ({ page, limit, status }) => {
   return courseRepo.findAllForAdmin({ page, limit, status });
 };
+
+/**
+ * Gửi khoá học để Admin duyệt
+ * Route: POST /api/courses/:id/submit
+ * Business rules:
+ *   1. Chỉ instructor tạo khoá học mới được gửi
+ *   2. Khoá học đang ở draft, hoặc đang published nhưng đã approved/rejected (gửi cập nhật)
+ *   3. Phải có ít nhất 1 lesson
+ */
+export const submitCourse = async (courseId, instructorId) => {
+  // 1. Kiểm tra khoá học tồn tại và thuộc instructor
+  const course = await courseRepo.findByIdAndInstructor(courseId, instructorId);
+  if (!course) throw new Error('Không tìm thấy khoá học hoặc bạn không có quyền');
+
+  // 2. Kiểm tra trạng thái hợp lệ
+  // Chỉ block nếu đã submit thật sự (submittedAt có giá trị)
+  // Draft mới có default reviewStatus='pending' nhưng submittedAt=null → cho phép submit
+  if (course.reviewStatus === 'pending' && course.submittedAt) {
+    throw new Error('Khoá học đang được chờ duyệt, vui lòng chờ Admin xem xét');
+  }
+
+  // 3. Kiểm tra có ít nhất 1 lesson
+  const { default: Lesson } = await import('../models/Lesson.js');
+  const lessonCount = await Lesson.countDocuments({ course: courseId });
+  if (lessonCount === 0) {
+    throw new Error('Khoá học phải có ít nhất 1 bài học trước khi gửi duyệt');
+  }
+
+  // 4. Gửi duyệt -> đổi status sang published và reviewStatus sang pending
+  const updated = await courseRepo.submitForReview(courseId);
+  return updated;
+};

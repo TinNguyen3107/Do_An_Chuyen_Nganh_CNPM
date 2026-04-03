@@ -7,6 +7,7 @@ import {
   updateCourse,
   publishCourse,
   deleteCourse,
+  submitCourse,
 } from '../controllers/courseController.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import { authorize, requireApprovedInstructor } from '../middlewares/roleMiddleware.js';
@@ -53,6 +54,13 @@ router.patch('/:id/publish',
   protect,
   authorize('instructor', 'admin'),
   publishCourse
+);
+
+// ── Submit course for review (instructor) ─────────────────────────
+router.post('/:id/submit',
+  protect,
+  authorize('instructor', 'admin'),
+  submitCourse
 );
 
 // ── Delete course (draft only) ────────────────────────────────────

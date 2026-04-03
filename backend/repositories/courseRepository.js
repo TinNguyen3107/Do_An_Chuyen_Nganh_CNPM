@@ -81,3 +81,10 @@ export const updateReviewStats = (courseId, averageRating, totalReviews) =>
     },
     { new: true }
   );
+
+export const submitForReview = (courseId) =>
+  Course.findByIdAndUpdate(
+    courseId,
+    { status: 'published', reviewStatus: 'pending', submittedAt: new Date() },
+    { new: true }
+  );

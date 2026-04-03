@@ -89,6 +89,7 @@ const courseSchema = new mongoose.Schema(
     tags:         { type: [String], default: [] },
 
     publishedAt: { type: Date, default: null },
+    submittedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
