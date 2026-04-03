@@ -32,6 +32,7 @@ import ManageUsers from '../pages/Admin/ManageUsers';
 import ManageInstructors from '../pages/Admin/ManageInstructors';
 import ManageCategories from '../pages/Admin/ManageCategories';
 import AdminCourseReview from '../pages/Admin/AdminCourseReview';
+import AdminCourseUpdateReview from '../pages/Admin/AdminCourseUpdateReview';
 
 // ---- ICONS ----
 const I = {
@@ -93,12 +94,14 @@ export default function AppRouter() {
         { path: '/admin/users', label: 'Người dùng', icon: <I.Users /> },
         { path: '/admin/instructors', label: 'Phê duyệt GV', icon: <I.Instructor /> },
         { path: '/admin/courses-review', label: 'Duyệt khoá học', icon: <I.Course /> },
+        { path: '/admin/course-updates', label: 'Duyệt cập nhật', icon: <span>🔄</span> },
         { path: '/admin/categories', label: 'Danh mục', icon: <I.Categories /> },
       ]} /></ProtectedRoute>}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<ManageUsers />} />
         <Route path="/admin/instructors" element={<ManageInstructors />} />
         <Route path="/admin/courses-review" element={<AdminCourseReview />} />
+        <Route path="/admin/course-updates" element={<AdminCourseUpdateReview />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
       </Route>
 
