@@ -144,3 +144,23 @@ export const getAdminCourses = asyncHandler(async (req, res) => {
   const courses = await courseService.getAllCoursesAdmin({ page: +page, limit: +limit, status });
   res.json({ success: true, data: courses });
 });
+
+/**
+ * @desc    Gửi khoá học để Admin duyệt
+ * @route   POST /api/courses/:id/submit
+ * @access  Private (instructor — chủ khoá học)
+ */
+export const submitCourse = asyncHandler(async (req, res) => {
+  const course = await courseService.submitCourse(req.params.id, req.user._id);
+  res.json({
+    success: true,
+    data: {
+      _id: course._id,
+      title: course.title,
+      status: course.status,
+      reviewStatus: course.reviewStatus,
+      submittedAt: course.submittedAt,
+    },
+    message: 'Khoá học đã được gửi duyệt thành công! Admin sẽ xem xét trong thời gian sớm nhất 🎉',
+  });
+});

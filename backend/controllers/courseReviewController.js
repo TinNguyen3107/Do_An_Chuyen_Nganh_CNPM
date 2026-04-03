@@ -18,22 +18,12 @@ export const getPendingCourses = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Get course detail for review
- * @route   GET /api/admin/courses/:id/review
+ * @route   GET /api/admin-review/:id/review
  * @access  Private (admin only)
  */
 export const getCourseForReview = asyncHandler(async (req, res) => {
-  const course = await courseReviewService.getCourseDetailForReview(req.params.id);
-  
-  // Note: Since Chapter/Lesson models might be in development by another team member,
-  // we return the course detail for now. Full structure can be added once models are available.
-  
-  res.json({
-    success: true,
-    data: {
-      ...course.toObject(),
-      chapters: [], // Placeholder for now
-    },
-  });
+  const data = await courseReviewService.getCourseDetailForReview(req.params.id);
+  res.json({ success: true, data });
 });
 
 /**
@@ -97,6 +87,18 @@ export const getRejectedCourses = asyncHandler(async (req, res) => {
   res.json({ success: true, ...result });
 });
 
+export const getPendingNewCourses = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await courseReviewService.getPendingNewCourses({ page, limit });
+  res.json({ success: true, ...result });
+});
+
+export const getPendingUpdateCourses = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await courseReviewService.getPendingUpdateCourses({ page, limit });
+  res.json({ success: true, ...result });
+});
+
 export default {
   getPendingCourses,
   getCourseForReview,
@@ -104,4 +106,6 @@ export default {
   rejectCourse,
   getApprovedCourses,
   getRejectedCourses,
+  getPendingNewCourses,
+  getPendingUpdateCourses,
 };

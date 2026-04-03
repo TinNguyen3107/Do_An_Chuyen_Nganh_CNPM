@@ -3,6 +3,8 @@
  * Business logic for course review/approval workflow
  */
 import * as courseReviewRepo from '../repositories/courseReviewRepository.js';
+import Chapter from '../models/Chapter.js';
+import Lesson from '../models/Lesson.js';
 
 /**
  * Lấy danh sách khoá học chờ duyệt
@@ -30,9 +32,15 @@ export const getCourseDetailForReview = async (courseId) => {
   if (!course) {
     throw new Error('Không tìm thấy khoá học');
   }
-  // Remove the strict check because the instructor feature might have already been moved to status:'published' 
-  // but waiting for admin reviewStatus
-  return course;
+
+  const chapters = await Chapter.find({ course: courseId }).sort({ order: 1 });
+  const chaptersWithLessons = await Promise.all(
+    chapters.map(async (ch) => {
+      const lessons = await Lesson.find({ chapter: ch._id }).sort({ order: 1 });
+      return { ...ch.toObject(), lessons };
+    })
+  );
+  return { ...course.toObject(), chapters: chaptersWithLessons };
 };
 
 /**
@@ -114,6 +122,22 @@ export const getRejectedCourses = async ({ page = 1, limit = 10 } = {}) => {
   };
 };
 
+export const getPendingNewCourses = async ({ page = 1, limit = 10 } = {}) => {
+  const [courses, total] = await Promise.all([
+    courseReviewRepo.findPendingNewCourses({ page: +page, limit: +limit }),
+    courseReviewRepo.countPendingNewCourses(),
+  ]);
+  return { courses, total, page: +page, limit: +limit, totalPages: Math.ceil(total / limit) };
+};
+
+export const getPendingUpdateCourses = async ({ page = 1, limit = 10 } = {}) => {
+  const [courses, total] = await Promise.all([
+    courseReviewRepo.findPendingUpdateCourses({ page: +page, limit: +limit }),
+    courseReviewRepo.countPendingUpdateCourses(),
+  ]);
+  return { courses, total, page: +page, limit: +limit, totalPages: Math.ceil(total / limit) };
+};
+
 export default {
   getPendingCourses,
   getCourseDetailForReview,
@@ -121,4 +145,6 @@ export default {
   rejectCourse,
   getApprovedCourses,
   getRejectedCourses,
+  getPendingNewCourses,
+  getPendingUpdateCourses,
 };
