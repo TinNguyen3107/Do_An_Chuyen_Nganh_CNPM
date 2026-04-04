@@ -6,9 +6,9 @@ import mongoose from 'mongoose';
 const updateEnrollmentProgress = async (userId, courseId) => {
   const lessonsCollection = mongoose.connection.db.collection('lessons');
 
+  // Đếm tất cả lessons của course (không lọc isPublished vì field có thể không tồn tại)
   const totalLessons = await lessonsCollection.countDocuments({
     course: new mongoose.Types.ObjectId(courseId),
-    isPublished: true,
   });
 
   const completedLessons = await LessonProgress.countDocuments({
@@ -18,7 +18,7 @@ const updateEnrollmentProgress = async (userId, courseId) => {
   });
 
   const progress =
-    totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+  totalLessons === 0 ? 0 : Math.min(100, Math.round((completedLessons / totalLessons) * 100));
 
   await Enrollment.findOneAndUpdate(
     { user: userId, course: courseId },
@@ -58,15 +58,23 @@ export const updateTextProgress = asyncHandler(async (req, res) => {
     _id: new mongoose.Types.ObjectId(lessonId),
   });
 
-  const hasVideo = !!lesson?.videoUrl;
-  const hasText = !!lesson?.textContent;
+  // DB lưu snake_case: video_url, text_content
+  const hasVideo = !!(lesson?.video_url || lesson?.videoUrl);
+  const hasText  = !!(lesson?.text_content || lesson?.textContent);
+  const isQuiz   = lesson?.type === 'quiz';
 
-  if (hasVideo && hasText) {
+  if (isQuiz) {
+    // Quiz không complete qua text endpoint
+    progress.isCompleted = false;
+  } else if (hasVideo && hasText) {
     progress.isCompleted = progress.isVideoCompleted && progress.isTextCompleted;
   } else if (hasText) {
     progress.isCompleted = progress.isTextCompleted;
   } else if (hasVideo) {
     progress.isCompleted = progress.isVideoCompleted;
+  } else {
+    // Không có content → mark done
+    progress.isCompleted = true;
   }
 
   if (progress.isCompleted && !progress.completedAt) {
@@ -111,15 +119,21 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
     _id: new mongoose.Types.ObjectId(lessonId),
   });
 
-  const hasVideo = !!lesson?.videoUrl;
-  const hasText = !!lesson?.textContent;
+  // DB lưu snake_case: video_url, text_content
+  const hasVideo = !!(lesson?.video_url || lesson?.videoUrl);
+  const hasText  = !!(lesson?.text_content || lesson?.textContent);
+  const isQuiz   = lesson?.type === 'quiz';
 
-  if (hasVideo && hasText) {
+  if (isQuiz) {
+    progress.isCompleted = false; // quiz dùng endpoint riêng
+  } else if (hasVideo && hasText) {
     progress.isCompleted = progress.isVideoCompleted && progress.isTextCompleted;
   } else if (hasVideo) {
     progress.isCompleted = progress.isVideoCompleted;
   } else if (hasText) {
     progress.isCompleted = progress.isTextCompleted;
+  } else {
+    progress.isCompleted = true;
   }
 
   if (progress.isCompleted && !progress.completedAt) {
@@ -146,4 +160,30 @@ export const getCourseProgress = asyncHandler(async (req, res) => {
     success: true,
     data: progresses,
   });
+});
+
+// ── Quiz complete ─────────────────────────────────────────────────────────────
+export const updateQuizProgress = asyncHandler(async (req, res) => {
+  const { courseId, lessonId } = req.params;
+
+  let progress = await LessonProgress.findOne({
+    student: req.user._id,
+    course: courseId,
+    lesson: lessonId,
+  });
+
+  if (!progress) {
+    progress = await LessonProgress.create({
+      student: req.user._id,
+      course: courseId,
+      lesson: lessonId,
+    });
+  }
+
+  progress.isCompleted = true;
+  if (!progress.completedAt) progress.completedAt = new Date();
+  await progress.save();
+  await updateEnrollmentProgress(req.user._id, courseId);
+
+  res.json({ success: true, data: progress });
 });
