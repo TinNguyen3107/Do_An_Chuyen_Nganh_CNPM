@@ -52,7 +52,8 @@ export const authAPI = {
   uploadAvatar: (formData) => api.put('/auth/profile/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (resetToken, new_password) => api.post(`/auth/reset-password/${resetToken}`, { token: resetToken, new_password }),
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -80,7 +81,19 @@ export const courseAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   publish: (id) => api.patch(`/courses/${id}/publish`),
+  submit: (id) => api.post(`/courses/${id}/submit`),
   delete: (id) => api.delete(`/courses/${id}`),
+};
+
+export const adminCourseReviewAPI = {
+  getPending:        (params = {}) => api.get('/admin-review/pending',         { params }),
+  getPendingNew:     (params = {}) => api.get('/admin-review/pending-new',     { params }),
+  getPendingUpdates: (params = {}) => api.get('/admin-review/pending-updates', { params }),
+  getApproved:       (params = {}) => api.get('/admin-review/approved',        { params }),
+  getRejected:       (params = {}) => api.get('/admin-review/rejected',        { params }),
+  getByIdForReview:  (id)          => api.get(`/admin-review/${id}/review`),
+  approve:           (id)          => api.patch(`/admin-review/${id}/approve`),
+  reject:            (id, rejectionReason) => api.patch(`/admin-review/${id}/reject`, { rejectionReason }),
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -92,6 +105,15 @@ export const enrollmentAPI = {
   getMyCourses: () => api.get('/enrollments/my-courses'), // alias per spec
   checkEnrollment: (courseId) => api.get(`/enrollments/check/${courseId}`),
   getCourseStudents: (courseId) => api.get(`/enrollments/course/${courseId}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// REVIEWS
+//
+export const reviewAPI = {
+  getCourseReviews: (courseId) => api.get(`/reviews/course/${courseId}`),
+  getMyReview: (courseId) => api.get(`/reviews/course/${courseId}/my-review`),
+  createOrUpdate: (courseId, data) => api.post(`/reviews/course/${courseId}`, data),
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -125,5 +147,67 @@ export const userAPI = {
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
-export default api;
+// ─────────────────────────────────────────────────────────────────
+// CHAPTERS
+// ─────────────────────────────────────────────────────────────────
+export const chapterAPI = {
+  getByCourse: (courseId) => api.get(`/courses/${courseId}/chapters`),
+  create: (courseId, data) => api.post(`/courses/${courseId}/chapters`, data),
+  getById: (chapterId) => api.get(`/chapters/${chapterId}`),
+  update: (chapterId, data) => api.put(`/chapters/${chapterId}`, data),
+  delete: (chapterId) => api.delete(`/chapters/${chapterId}`),
+};
 
+// ─────────────────────────────────────────────────────────────────
+// LESSONS
+// ─────────────────────────────────────────────────────────────────
+export const lessonAPI = {
+  getByCourse: (courseId) => api.get(`/courses/${courseId}/lessons`),
+  getByChapter: (chapterId) => api.get(`/chapters/${chapterId}/lessons`),
+  create: (chapterId, data) => api.post(`/chapters/${chapterId}/lessons`, data),
+  getById: (lessonId) => api.get(`/lessons/${lessonId}`),
+  update: (lessonId, data) => api.put(`/lessons/${lessonId}`, data),
+  delete: (lessonId) => api.delete(`/lessons/${lessonId}`),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────────────────────────
+export const paymentAPI = {
+  createMomo: (courseId) => api.post('/payments/momo', { courseId }),
+  createMock: (courseId) => api.post('/payments/momo/mock', { courseId }),
+  createATM: (courseId) => api.post('/payments/atm', { courseId }),
+  createBank: (courseId) => api.post('/payments/bank', { courseId }),
+  confirmBank: (orderId, transId) => api.post('/payments/bank/confirm', { orderId, transId }),
+  getStatus: (orderId) => api.get(`/payments/status/${orderId}`),
+  getMyPayments: () => api.get('/payments/my'),
+  getAllPayments: () => api.get('/payments/list'),
+  getStats: () => api.get('/payments/stats'),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// WALLET (Instructor ví tiền)
+// ─────────────────────────────────────────────────────────────────
+export const walletAPI = {
+  getMyWallet: () => api.get('/wallet/me'),
+  updateBankInfo: (data) => api.put('/wallet/bank-info', data),
+  // Admin
+  getAllWallets: () => api.get('/wallet/all'),
+  updateRate: (id, commissionRate) => api.patch(`/wallet/${id}/rate`, { commissionRate }),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// PAYOUTS (Rút tiền)
+// ─────────────────────────────────────────────────────────────────
+export const payoutAPI = {
+  request: (amount) => api.post('/payouts/request', { amount }),
+  getMyPayouts: () => api.get('/payouts/my'),
+  // Admin
+  getPending: () => api.get('/payouts/pending'),
+  getAll: (params = {}) => api.get('/payouts/all', { params }),
+  process: (id) => api.patch(`/payouts/${id}/process`),
+  approve: (id, transactionId) => api.patch(`/payouts/${id}/approve`, { transactionId }),
+  reject: (id, reason) => api.patch(`/payouts/${id}/reject`, { reason }),
+};
+
+export default api;

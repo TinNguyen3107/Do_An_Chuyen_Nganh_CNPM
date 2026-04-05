@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { courseAPI, enrollmentAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import CourseReviewSection from '../../components/CourseReviewSection';
 import toast from 'react-hot-toast';
 
 const StarRating = ({ rating, size = 'md' }) => (
@@ -36,6 +37,7 @@ export default function CourseDetail() {
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [reloadCourse, setReloadCourse] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -45,7 +47,7 @@ export default function CourseDetail() {
       toast.error('Không tìm thấy khoá học');
       navigate('/courses');
     }).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate, reloadCourse]);
 
   useEffect(() => {
     if (user) {
@@ -57,12 +59,25 @@ export default function CourseDetail() {
 
   const handleEnroll = async () => {
     if (!user) { navigate('/auth'); return; }
+
+    // For paid courses, redirect to checkout page
+    if (!course.isFree) {
+      navigate(`/checkout/${id}`);
+      return;
+    }
+
     setEnrolling(true);
     try {
       await enrollmentAPI.enroll(id);
       setEnrolled(true);
+      setReloadCourse(prev => prev + 1);
       toast.success('Đăng ký khoá học thành công!');
     } catch (err) {
+      // If backend returns requiresPayment (402), redirect to checkout
+      if (err.response?.status === 402 && err.response?.data?.requiresPayment) {
+        navigate(`/checkout/${id}`);
+        return;
+      }
       toast.error(err.response?.data?.message || 'Lỗi khi đăng ký khoá học');
     } finally {
       setEnrolling(false);
@@ -105,7 +120,7 @@ export default function CourseDetail() {
             <div className="flex items-center gap-2">
               <StarRating rating={course.averageRating || 0} size="lg" />
               <span className="text-amber-400 font-bold">{course.averageRating > 0 ? course.averageRating.toFixed(1) : 'Mới'}</span>
-              <span className="text-slate-400 text-sm">({course.totalStudents || 0} học viên)</span>
+              <span className="text-slate-400 text-sm">({course.totalReviews || 0} đánh giá • {course.totalStudents || 0} học viên)</span>
             </div>
             <Badge color="blue">{course.category?.name}</Badge>
             <Badge color="purple">{levelLabels[course.level] || 'Tất cả'}</Badge>
@@ -174,6 +189,12 @@ export default function CourseDetail() {
               <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{course.description}</p>
             </div>
 
+            <CourseReviewSection
+              courseId={id}
+              enrolled={enrolled}
+              onReviewSubmitted={() => setReloadCourse(prev => prev + 1)}
+            />
+
             {/* TAGS */}
             {course.tags?.length > 0 && (
               <div>
@@ -231,6 +252,7 @@ export default function CourseDetail() {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Khoá học bao gồm:</p>
                   {[
                     { icon: '👥', text: `${course.totalStudents || 0} học viên đã đăng ký` },
+                    { icon: '⭐', text: `${course.totalReviews || 0} đánh giá` },
                     { icon: '📚', text: `${course.totalLectures || 0} bài giảng` },
                     { icon: '⏱', text: `${course.totalDuration || 0} phút học` },
                     { icon: '🌍', text: course.language || 'Tiếng Việt' },

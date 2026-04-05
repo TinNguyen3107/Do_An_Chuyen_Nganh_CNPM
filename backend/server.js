@@ -15,7 +15,17 @@ import instructorRoutes from './routes/instructorRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import enrollmentRoutes from './routes/enrollmentRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import walletRoutes from './routes/walletRoutes.js';
+import payoutRoutes from './routes/payoutRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import progressRoutes from './routes/progressRoutes.js';
+import learningRoutes from './routes/learningRoutes.js';
+import courseReviewRoutes from './routes/courseReviewRoutes.js';
+import lessonRoutes, { lessonStandaloneRouter } from './routes/lessonRoutes.js';
+import chapterRoutes, { chapterStandaloneRouter, chapterLessonRouter } from './routes/chapterRoutes.js';
+
 
 dotenv.config();
 
@@ -47,7 +57,19 @@ app.use('/api/instructors', instructorRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/payouts', payoutRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/learning', learningRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin-review', courseReviewRoutes);
+app.use('/api/courses/:courseId/chapters', chapterRoutes);   // GET/POST chapters
+app.use('/api/courses/:courseId/lessons',  lessonRoutes);    // GET lessons by course
+app.use('/api/chapters', chapterStandaloneRouter);           // GET/PUT/DELETE /chapters/:id
+app.use('/api/chapters/:chapterId/lessons', chapterLessonRouter); // GET/POST lessons in chapter
+app.use('/api/lessons', lessonStandaloneRouter);             // GET/PUT/DELETE /lessons/:id
 
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

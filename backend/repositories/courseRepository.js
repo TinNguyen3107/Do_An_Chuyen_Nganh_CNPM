@@ -72,3 +72,19 @@ export const findAllForAdmin = ({ page = 1, limit = 20, status } = {}) => {
 export const incrementStudentCount = (courseId) =>
   Course.findByIdAndUpdate(courseId, { $inc: { totalStudents: 1 } });
 
+export const updateReviewStats = (courseId, averageRating, totalReviews) =>
+  Course.findByIdAndUpdate(
+    courseId,
+    {
+      averageRating: Number((averageRating || 0).toFixed(1)),
+      totalReviews: totalReviews || 0,
+    },
+    { new: true }
+  );
+
+export const submitForReview = (courseId) =>
+  Course.findByIdAndUpdate(
+    courseId,
+    { status: 'published', reviewStatus: 'pending', submittedAt: new Date(), hasPendingChanges: false },
+    { new: true }
+  );

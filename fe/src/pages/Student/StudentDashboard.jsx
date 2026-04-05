@@ -10,10 +10,18 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     enrollmentAPI.getMyEnrollments()
-      .then(res => setEnrollments(res.data.data || []))
+      .then((res) => setEnrollments(res.data.data || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const completedCoursesCount = enrollments.filter(
+    (enrollment) => (enrollment.progress || 0) === 100 || enrollment.isCompleted
+  ).length;
+
+  const inProgressCoursesCount = enrollments.filter(
+    (enrollment) => (enrollment.progress || 0) > 0 && (enrollment.progress || 0) < 100
+  ).length;
 
   return (
     <div className="animate-fade-in max-w-6xl">
@@ -82,7 +90,7 @@ export default function StudentDashboard() {
               const course = enrollment.course;
               if (!course) return null;
               return (
-                <Link key={enrollment._id} to={`/courses/${course._id}`} className="flex gap-4 p-4 bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700 rounded-xl transition-all group">
+                <Link key={enrollment._id} to={`/student/learning/${course._id}`} className="flex gap-4 p-4 bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700 rounded-xl transition-all group">
                   <div className="w-20 h-14 bg-slate-700 rounded-lg flex-shrink-0 overflow-hidden">
                     {course.thumbnail ? (
                       <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
@@ -96,10 +104,15 @@ export default function StudentDashboard() {
                     <h3 className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors line-clamp-1 mb-1">{course.title}</h3>
                     <p className="text-xs text-slate-500 mb-2">{course.instructor?.name}</p>
                     <div className="h-1 bg-slate-700 rounded-full overflow-hidden w-full">
-                      <div className="h-full w-0 bg-blue-500 rounded-full" />
+                      <div 
+                        className="h-full w-0 bg-blue-500 rounded-full transition-all duration-500"
+                        style={{ width: `${enrollment.progress || 0}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="text-xs text-slate-500 flex-shrink-0 self-center">0%</div>
+                  <div className="text-xs text-slate-500 flex-shrink-0 self-center">
+                    {enrollment.progress || 0}%
+                  </div>
                 </Link>
               );
             })}
