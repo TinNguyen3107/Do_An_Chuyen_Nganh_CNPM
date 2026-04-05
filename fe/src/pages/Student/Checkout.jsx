@@ -13,7 +13,7 @@ export default function Checkout() {
   const [method, setMethod] = useState('momo');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
-  const [confirming, setConfirming] = useState(false);
+
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -50,12 +50,6 @@ export default function Checkout() {
             window.open(res.data.payUrl, '_blank');
           }
           break;
-        case 'bank':
-          res = await paymentAPI.createBank(courseId);
-          if (res.data.success) {
-            setResult({ type: 'bank', data: res.data });
-          }
-          break;
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Lỗi khi tạo đơn thanh toán');
@@ -83,19 +77,6 @@ export default function Checkout() {
     }
   };
 
-  // Demo: tự xác nhận chuyển khoản ngân hàng
-  const confirmBankDemo = async (orderId) => {
-    setConfirming(true);
-    try {
-      await paymentAPI.confirmBank(orderId, `DEMO_TXN_${Date.now()}`);
-      setResult({ type: 'success', data: { orderId } });
-      toast.success('Xác nhận thành công! Bạn đã được ghi danh vào khoá học 🎉');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi xác nhận');
-    } finally {
-      setConfirming(false);
-    }
-  };
 
   const fmt = (n) => Number(n).toLocaleString('vi-VN');
 
@@ -152,7 +133,6 @@ export default function Checkout() {
                 {[
                   { id: 'momo', icon: '💳', name: 'Ví MoMo', desc: 'Thanh toán qua ví điện tử MoMo', color: 'pink' },
                   { id: 'atm', icon: '🏦', name: 'Thẻ ATM / Ngân hàng', desc: 'Nhập thẻ ATM hoặc tài khoản NH', color: 'blue' },
-                  { id: 'bank', icon: '📱', name: 'Chuyển khoản QR', desc: 'Chuyển khoản qua mã VietQR', color: 'green' },
                   { id: 'mock', icon: '🧪', name: 'Mock (Demo)', desc: 'Thanh toán thử không cần ví', color: 'purple' },
                 ].map(m => (
                   <button
@@ -186,7 +166,6 @@ export default function Checkout() {
                 className={`w-full py-3.5 font-bold rounded-xl transition-all text-white shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed
                   ${method === 'momo' ? 'bg-gradient-to-r from-pink-600 to-pink-500 shadow-pink-600/30 hover:shadow-pink-600/50'
                     : method === 'atm' ? 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-blue-600/30 hover:shadow-blue-600/50'
-                    : method === 'bank' ? 'bg-gradient-to-r from-green-600 to-green-500 shadow-green-600/30 hover:shadow-green-600/50'
                     : 'bg-gradient-to-r from-purple-600 to-purple-500 shadow-purple-600/30 hover:shadow-purple-600/50'
                   }`}
               >
@@ -250,62 +229,12 @@ export default function Checkout() {
                         🔄 Kiểm tra
                       </button>
                     </div>
-                    <div className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-sm text-purple-300 mb-3">
-                      🧪 MoMo Sandbox không thể gửi IPN về localhost. Dùng nút bên dưới để giả lập xác nhận thanh toán.
+                    <div className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-sm text-purple-300">
+                      🧪 MoMo Sandbox không thể gửi IPN về localhost. Dùng nút Kiểm tra để xác nhận trạng thái thanh toán.
                     </div>
-                    <button
-                      onClick={() => confirmBankDemo(result.data.orderId)}
-                      disabled={confirming}
-                      className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-                    >
-                      {confirming ? (
-                        <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang xác nhận...</>
-                      ) : (
-                        '✅ Demo: Xác nhận thanh toán thành công'
-                      )}
-                    </button>
                   </div>
                 )}
 
-                {/* Bank transfer */}
-                {result.type === 'bank' && (
-                  <div>
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 text-center mb-4">
-                      <div className="text-5xl mb-3">🏦</div>
-                      <div className="text-xl font-bold text-blue-400 mb-1">Thông tin chuyển khoản</div>
-                      <p className="text-sm text-slate-400">Quét mã QR hoặc chuyển khoản thủ công</p>
-                    </div>
-                    {result.data.qrUrl && (
-                      <div className="flex justify-center mb-4">
-                        <img src={result.data.qrUrl} alt="QR Code" className="w-48 h-48 rounded-xl border-2 border-blue-500/30 bg-white" />
-                      </div>
-                    )}
-                    <div className="bg-slate-800/50 rounded-xl p-4 space-y-2 mb-4">
-                      <div className="flex justify-between text-sm py-1.5 border-b border-slate-700"><span className="text-slate-400">Ngân hàng</span><span className="font-semibold text-white">{result.data.bank?.name}</span></div>
-                      <div className="flex justify-between text-sm py-1.5 border-b border-slate-700"><span className="text-slate-400">Số tài khoản</span><span className="font-mono font-semibold text-white">{result.data.bank?.accountNumber}</span></div>
-                      <div className="flex justify-between text-sm py-1.5 border-b border-slate-700"><span className="text-slate-400">Tên TK</span><span className="font-semibold text-white">{result.data.bank?.accountName}</span></div>
-                      <div className="flex justify-between text-sm py-1.5 border-b border-slate-700"><span className="text-slate-400">Số tiền</span><span className="font-bold text-amber-400">{fmt(result.data.amount)}đ</span></div>
-                      <div className="flex justify-between text-sm py-1.5"><span className="text-slate-400">Nội dung CK</span><span className="font-mono font-semibold text-blue-400">{result.data.transferContent}</span></div>
-                    </div>
-                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 text-sm text-amber-300 mb-4">
-                      ⚠️ Vui lòng nhập đúng <strong>nội dung chuyển khoản</strong> để hệ thống tự động xác nhận.
-                    </div>
-                    <button onClick={() => checkStatus(result.data.orderId)} className="w-full py-3 border border-slate-700 hover:border-slate-600 text-slate-300 rounded-xl text-sm transition-all font-semibold mb-3">
-                      🔄 Kiểm tra trạng thái thanh toán
-                    </button>
-                    <button
-                      onClick={() => confirmBankDemo(result.data.orderId)}
-                      disabled={confirming}
-                      className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-                    >
-                      {confirming ? (
-                        <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang xác nhận...</>
-                      ) : (
-                        '✅ Demo: Xác nhận đã chuyển khoản'
-                      )}
-                    </button>
-                  </div>
-                )}
 
                 {/* Verified success */}
                 {result.type === 'success' && (
