@@ -224,14 +224,14 @@ export default function InstructorDashboard() {
         /* ── Table ──────────────────────────────────────────────────────── */
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <colgroup>
-                <col style={{width:'auto'}} />
-                <col style={{width:'110px'}} />
+                <col style={{minWidth:'240px'}} />
+                <col style={{width:'120px'}} />
                 <col style={{width:'110px'}} />
                 <col style={{width:'90px'}} />
                 <col style={{width:'80px'}} />
-                <col style={{width:'130px'}} />
+                <col style={{width:'150px'}} />
                 <col style={{width:'190px'}} />
               </colgroup>
 
@@ -260,16 +260,16 @@ export default function InstructorDashboard() {
                   <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
 
                     {/* Khoá học */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+                    <td className="px-5 py-3.5 max-w-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0 border border-slate-700">
                           {c.thumbnail
                             ? <img src={c.thumbnail} alt="" className="w-full h-full object-cover" />
-                            : <div className="w-full h-full flex items-center justify-center text-slate-600">📚</div>
+                            : <div className="w-full h-full flex items-center justify-center text-slate-600 text-lg">📚</div>
                           }
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-white line-clamp-2 leading-snug text-sm">{c.title}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-white line-clamp-2 leading-snug text-sm" title={c.title}>{c.title}</p>
                           {c.reviewStatus === 'rejected' && (
                             <p className="text-xs text-red-400 mt-0.5 line-clamp-1">⚠ {c.rejectionReason || 'Bị từ chối'}</p>
                           )}
@@ -322,13 +322,16 @@ export default function InstructorDashboard() {
                           className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 border border-slate-700 hover:border-amber-500/30 rounded-lg transition-colors"
                         >✏️</button>
 
-                        {c.status === 'draft' && (
+                        {/* Draft: chưa submit lần nào */}
+                        {(c.status === 'draft' || (!c.submittedAt && c.status !== 'published')) && (
                           <>
-                            <button
-                              onClick={() => handleDelete(c._id)}
-                              title="Xoá bản nháp"
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-slate-700 hover:border-red-500/30 rounded-lg transition-colors"
-                            >🗑️</button>
+                            {c.status === 'draft' && (
+                              <button
+                                onClick={() => handleDelete(c._id)}
+                                title="Xoá bản nháp"
+                                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-slate-700 hover:border-red-500/30 rounded-lg transition-colors"
+                              >🗑️</button>
+                            )}
                             <button
                               onClick={() => handleSubmit(c)}
                               className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-lg shadow shadow-indigo-500/20 transition-all whitespace-nowrap"
@@ -336,8 +339,8 @@ export default function InstructorDashboard() {
                           </>
                         )}
 
-                        {/* Legacy: published nhưng chưa submit qua workflow đúng */}
-                        {c.status === 'published' && c.reviewStatus === 'pending' && !c.submittedAt && (
+                        {/* Published nhưng chưa submit (legacy data) */}
+                        {c.status === 'published' && !c.submittedAt && (
                           <button
                             onClick={() => handleSubmit(c)}
                             title="Gửi khoá học này để Admin duyệt"

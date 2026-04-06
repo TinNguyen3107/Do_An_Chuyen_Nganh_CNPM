@@ -32,15 +32,18 @@ const fmt = (s) => {
 };
 
 // ── LMS Custom YouTube Player — hoàn toàn ẩn YouTube branding ────────────────
-function LMSVideoPlayer({ videoId, onReach80Percent }) {
+function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) {
   const playerDivRef = useRef(null);
   const playerRef    = useRef(null);
   const wrapperRef   = useRef(null);
   const progressRef  = useRef(null);
   const hideTimer    = useRef(null);
   const tickTimer    = useRef(null);
-  const reportedRef  = useRef(false);
-  const idRef        = useRef(`yt-${Math.random().toString(36).slice(2, 8)}`);
+  const reportedRef      = useRef(false);
+  const watchedSecsRef   = useRef(0);     // tích lũy giây xem THỰC TẾ khi đang play
+  const maxReachedRef    = useRef(0);     // giây xa nhất đã xem thực tế → giới hạn seek
+  const seekWarnTimerRef = useRef(null);
+  const idRef            = useRef(`yt-${Math.random().toString(36).slice(2, 8)}`);
 
   const [ready,        setReady]        = useState(false);
   const [playing,      setPlaying]      = useState(false);
@@ -52,7 +55,8 @@ function LMSVideoPlayer({ videoId, onReach80Percent }) {
   const [showControls, setShowControls] = useState(true);
   const [speed,        setSpeed]        = useState(1);
   const [showSpeed,    setShowSpeed]    = useState(false);
-  const [isFs,         setIsFs]         = useState(false);
+  const [isFs,          setIsFs]          = useState(false);
+  const [showSeekWarn,  setShowSeekWarn]  = useState(false); // cảnh báo tua quá 5s
 
   useEffect(() => {
     let destroyed = false;
@@ -74,10 +78,19 @@ function LMSVideoPlayer({ videoId, onReach80Percent }) {
         },
       });
     });
-    return () => { destroyed = true; clearInterval(tickTimer.current); clearTimeout(hideTimer.current); try { playerRef.current?.destroy(); } catch (_) {} };
+    return () => {
+      destroyed = true;
+      watchedSecsRef.current = 0;   // reset khi chuyển video
+      maxReachedRef.current  = 0;   // reset giới hạn seek
+      reportedRef.current    = false;
+      clearInterval(tickTimer.current);
+      clearTimeout(hideTimer.current);
+      clearTimeout(seekWarnTimerRef.current);
+      try { playerRef.current?.destroy(); } catch (_) {}
+    };
   }, [videoId]);
 
-  // Progress tick + tracking 80%
+  // Progress tick + tracking 50% real watch time
   useEffect(() => {
     if (playing) {
       tickTimer.current = setInterval(() => {
@@ -86,18 +99,21 @@ function LMSVideoPlayer({ videoId, onReach80Percent }) {
         const ct = p.getCurrentTime();
         setCurrentTime(ct);
         if (!duration) setDuration(p.getDuration());
-        // tracking 80%
+        // Tích lũy thời gian xem thực tế — 0.3s/tick khi đang play
+        watchedSecsRef.current += 0.3;
+        // Cập nhật điểm xa nhất đã xem (dùng để giới hạn seek)
+        if (ct > maxReachedRef.current) maxReachedRef.current = ct;
         const dur = p.getDuration() || 0;
-        if (dur > 0 && ct / dur >= 0.8 && !reportedRef.current) {
+        if (dur > 0 && watchedSecsRef.current / dur >= 0.5 && !reportedRef.current) {
           reportedRef.current = true;
-          onReach80Percent?.();
+          onWatchComplete?.();
         }
       }, 300);
     } else {
       clearInterval(tickTimer.current);
     }
     return () => clearInterval(tickTimer.current);
-  }, [playing, duration, onReach80Percent]);
+  }, [playing, duration, onWatchComplete]);
 
   useEffect(() => {
     const h = () => setIsFs(!!document.fullscreenElement);
@@ -114,10 +130,27 @@ function LMSVideoPlayer({ videoId, onReach80Percent }) {
   const togglePlay = () => { if (!ready) return; playing ? playerRef.current.pauseVideo() : playerRef.current.playVideo(); resetHide(); };
   const seek = (e) => {
     if (!progressRef.current || !duration) return;
-    const rect = progressRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    playerRef.current?.seekTo(ratio * duration, true);
-    setCurrentTime(ratio * duration);
+    const rect       = progressRef.current.getBoundingClientRect();
+    const ratio      = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetTime = ratio * duration;
+
+    // Nếu đã hoàn thành video → cho phép tua tự do
+    const isDone = alreadyCompleted || reportedRef.current;
+    if (!isDone) {
+      const maxAllowed = maxReachedRef.current + 5;
+      if (targetTime > maxAllowed) {
+        const snapTo = Math.min(maxAllowed, duration);
+        playerRef.current?.seekTo(snapTo, true);
+        setCurrentTime(snapTo);
+        setShowSeekWarn(true);
+        clearTimeout(seekWarnTimerRef.current);
+        seekWarnTimerRef.current = setTimeout(() => setShowSeekWarn(false), 2500);
+        return;
+      }
+    }
+
+    playerRef.current?.seekTo(targetTime, true);
+    setCurrentTime(targetTime);
   };
   const changeVolume = (val) => { const v = Number(val); setVolume(v); playerRef.current?.setVolume(v); if (v === 0) { setMuted(true); playerRef.current?.mute(); } else { setMuted(false); playerRef.current?.unMute(); } };
   const toggleMute   = () => { if (muted) { playerRef.current?.unMute(); playerRef.current?.setVolume(volume || 80); setMuted(false); } else { playerRef.current?.mute(); setMuted(true); } };
@@ -134,6 +167,14 @@ function LMSVideoPlayer({ videoId, onReach80Percent }) {
       onMouseLeave={() => playing && setShowControls(false)}
     >
       <div ref={playerDivRef} id={idRef.current} className="w-full h-full" />
+
+      {/* Cảnh báo tua quá 5s */}
+      {showSeekWarn && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-orange-500/90 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl pointer-events-none">
+          <span>⚠️</span>
+          <span>Không thể tua qua phần chưa xem!</span>
+        </div>
+      )}
 
       {/* Loading */}
       {!ready && (
@@ -316,9 +357,16 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
 
                 let style = 'border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50';
                 if (submitted) {
-                  if (isCorrect) style = 'border-emerald-500 bg-emerald-500/15 text-emerald-300';
-                  else if (isChosen) style = 'border-red-500 bg-red-500/15 text-red-300';
-                  else style = 'border-slate-700 text-slate-500';
+                  if (isChosen && isCorrect) {
+                    // Chọn đúng → xanh
+                    style = 'border-emerald-500 bg-emerald-500/15 text-emerald-300';
+                  } else if (isChosen && !isCorrect) {
+                    // Chọn sai → đỏ (KHÔNG reveal đáp án đúng)
+                    style = 'border-red-500 bg-red-500/15 text-red-300';
+                  } else {
+                    // Không chọn → mờ đi, giữ bí mật đáp án
+                    style = 'border-slate-700 text-slate-600 opacity-60';
+                  }
                 } else if (isChosen) {
                   style = 'border-blue-500 bg-blue-500/15 text-blue-300';
                 }
@@ -332,7 +380,7 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
                   >
                     <span className="font-semibold mr-2">{String.fromCharCode(65 + oIdx)}.</span>
                     {opt}
-                    {submitted && isCorrect && <span className="float-right text-emerald-400">✓</span>}
+                    {submitted && isChosen && isCorrect  && <span className="float-right text-emerald-400">✓</span>}
                     {submitted && isChosen && !isCorrect && <span className="float-right text-red-400">✗</span>}
                   </button>
                 );
@@ -382,9 +430,17 @@ export default function LearningPage() {
   const [completedLessonIds, setCompletedLessonIds] = useState([]);
   const [textDoneMap, setTextDoneMap] = useState({});
   const [videoDoneMap, setVideoDoneMap] = useState({});
+  const [showHtmlSeekWarn, setShowHtmlSeekWarn] = useState(false); // cảnh báo tua HTML5
 
-  const textTimerRef = useRef(null);
-  const videoReportedRef = useRef({});
+  const textTimerRef        = useRef(null);
+  const videoReportedRef    = useRef({});     // đã báo cáo video lesson nào rồi
+  const videoWatchedSecsRef = useRef({});     // giây xem thực tế của từng lesson (HTML5)
+  const videoLastTimeRef    = useRef({});     // vị trí cuối để tính delta (HTML5)
+  const videoMaxReachedRef  = useRef({});     // điểm xa nhất đã xem (HTML5) → giới hạn seek
+  const htmlSeekWarnTimer   = useRef(null);
+  // Refs luôn giữ giá trị mới nhất → tránh stale closure trong callbacks
+  const videoDoneMapRef     = useRef({});
+  const textDoneMapRef      = useRef({});
 
   const getAuthConfig = () => {
     const token =
@@ -399,8 +455,10 @@ export default function LearningPage() {
   };
 
   const markLessonCompletedLocal = (lessonId) => {
+    // Bug 5: normalize về string để includes() so sánh đúng
+    const id = lessonId?.toString();
     setCompletedLessonIds((prev) =>
-      prev.includes(lessonId) ? prev : [...prev, lessonId]
+      prev.includes(id) ? prev : [...prev, id]
     );
   };
 
@@ -459,10 +517,11 @@ export default function LearningPage() {
       const nextCompletedLessonIds = [];
 
       items.forEach((item) => {
+        // Bug 5: normalize lessonId về string
         const lessonId =
           typeof item.lesson === 'object' && item.lesson !== null
-            ? item.lesson._id
-            : item.lesson;
+            ? item.lesson._id?.toString()
+            : item.lesson?.toString();
 
         if (!lessonId) return;
 
@@ -471,8 +530,10 @@ export default function LearningPage() {
         if (item.isCompleted)      nextCompletedLessonIds.push(lessonId);
       });
 
-      // Suy ra completion cục bộ nếu đủ điều kiện (text+video done) nhưng DB chưa cập nhật isCompleted
+      // Suy ra completion cục bộ: chỉ áp dụng cho video/text, KHÔNG áp dụng quiz
+      // Bug 1: quiz có videoUrl='' và textContent='' → tránh auto-complete oan
       lessonList.forEach((lesson) => {
+        if (lesson.type === 'quiz') return; // quiz chỉ mark done qua /quiz endpoint
         const lid = lesson._id?.toString();
         if (!lid) return;
         const textOk  = !lesson.textContent || nextTextDoneMap[lid];
@@ -530,7 +591,8 @@ export default function LearningPage() {
     return () => { if (textTimerRef.current) clearTimeout(textTimerRef.current); };
   }, [courseId]);
 
-  const reportTextProgress = async (lesson) => {
+  // Bug 3: useCallback + đọc từ ref thay vì closure để tránh stale state
+  const reportTextProgress = useCallback(async (lesson) => {
     try {
       await axios.post(
         `http://localhost:5000/api/progress/course/${courseId}/lesson/${lesson._id}/text`,
@@ -541,15 +603,16 @@ export default function LearningPage() {
       setTextDoneMap((prev) => ({ ...prev, [lesson._id]: true }));
 
       const hasVideo = !!lesson.videoUrl;
-      if (!hasVideo || videoDoneMap[lesson._id]) {
+      // Đọc từ ref để luôn có giá trị mới nhất, tránh stale closure
+      if (!hasVideo || videoDoneMapRef.current[lesson._id]) {
         markLessonCompletedLocal(lesson._id);
       }
     } catch (err) {
       console.error('Text progress error:', err);
     }
-  };
+  }, [courseId]);
 
-  const reportVideoProgress = async (lesson, percent) => {
+  const reportVideoProgress = useCallback(async (lesson, percent) => {
     try {
       await axios.post(
         `http://localhost:5000/api/progress/course/${courseId}/lesson/${lesson._id}/video`,
@@ -560,13 +623,18 @@ export default function LearningPage() {
       setVideoDoneMap((prev) => ({ ...prev, [lesson._id]: true }));
 
       const hasText = !!lesson.textContent;
-      if (!hasText || textDoneMap[lesson._id]) {
+      // Đọc từ ref để luôn có giá trị mới nhất, tránh stale closure
+      if (!hasText || textDoneMapRef.current[lesson._id]) {
         markLessonCompletedLocal(lesson._id);
       }
     } catch (err) {
       console.error('Video progress error:', err);
     }
-  };
+  }, [courseId]);
+
+  // Bug 2+3: sync refs mỗi khi state thay đổi — để callbacks đọc giá trị mới nhất
+  useEffect(() => { videoDoneMapRef.current = videoDoneMap; }, [videoDoneMap]);
+  useEffect(() => { textDoneMapRef.current  = textDoneMap;  }, [textDoneMap]);
 
   useEffect(() => {
     if (!currentLesson) return;
@@ -586,17 +654,54 @@ export default function LearningPage() {
         clearTimeout(textTimerRef.current);
       }
     };
-  }, [currentLesson, courseId, textDoneMap, videoDoneMap]);
+  // Bug 2: bỏ videoDoneMap khỏi deps → timer KHÔNG bị reset khi video cập nhật
+  // reportTextProgress đọc videoDoneMapRef.current nên vẫn có giá trị mới nhất
+  }, [currentLesson, courseId, textDoneMap, reportTextProgress]);
 
   const handleVideoTimeUpdate = async (e, lesson) => {
     const video = e.target;
     if (!video?.duration) return;
 
-    const percent = (video.currentTime / video.duration) * 100;
+    const lid         = lesson._id?.toString();
+    const currentTime = video.currentTime;
+    const lastTime    = videoLastTimeRef.current[lid] ?? currentTime;
+    const delta       = currentTime - lastTime;
+    videoLastTimeRef.current[lid] = currentTime;
 
-    if (percent >= 80 && !videoReportedRef.current[lesson._id]) {
-      videoReportedRef.current[lesson._id] = true;
-      await reportVideoProgress(lesson, percent);
+    // Chỉ tích lũy khi đi tiến & delta nhỏ (bỏ qua seek nhảy lớn > 2s)
+    if (delta > 0 && delta < 2) {
+      videoWatchedSecsRef.current[lid] = (videoWatchedSecsRef.current[lid] || 0) + delta;
+      // Cập nhật điểm xa nhất đã xem (dùng để giới hạn seek)
+      const prevMax = videoMaxReachedRef.current[lid] || 0;
+      if (currentTime > prevMax) videoMaxReachedRef.current[lid] = currentTime;
+    }
+
+    const watchedPct = ((videoWatchedSecsRef.current[lid] || 0) / video.duration) * 100;
+
+    // Ngưỡng 50%: phải xem THỰC TẾ đủ 50% thời lượng
+    if (watchedPct >= 50 && !videoReportedRef.current[lid]) {
+      videoReportedRef.current[lid] = true;
+      await reportVideoProgress(lesson, 50);
+    }
+  };
+
+  // Giới hạn tua HTML5 video: không cho seek quá 5s so với điểm đã xem xa nhất
+  // Trừ khi video đã hoàn thành → cho tua tự do
+  const handleVideoSeeking = (e, lesson) => {
+    const video = e.target;
+    if (!video?.duration) return;
+    const lid        = lesson._id?.toString();
+
+    // Nếu đã hoàn thành (trong session hoặc từ DB) → bỏ giới hạn
+    if (videoReportedRef.current[lid] || videoDoneMapRef.current[lid]) return;
+
+    const maxReached = videoMaxReachedRef.current[lid] || 0;
+    const maxAllowed = maxReached + 5;
+    if (video.currentTime > maxAllowed) {
+      video.currentTime = Math.min(maxAllowed, video.duration);
+      setShowHtmlSeekWarn(true);
+      clearTimeout(htmlSeekWarnTimer.current);
+      htmlSeekWarnTimer.current = setTimeout(() => setShowHtmlSeekWarn(false), 2500);
     }
   };
 
@@ -606,7 +711,8 @@ export default function LearningPage() {
     const previousLesson = lessons[index - 1];
     if (!previousLesson) return false;
 
-    return !completedLessonIds.includes(previousLesson._id);
+    // Bug 5: so sánh bằng string để tránh mismatch ObjectId vs string
+    return !completedLessonIds.includes(previousLesson._id?.toString());
   };
 
   const handleSelectLesson = (lesson, index) => {
@@ -662,8 +768,9 @@ export default function LearningPage() {
               <div className="space-y-3">
                 {lessons.map((lesson, index) => {
                   const locked = isLessonLocked(index);
-                  const completed = completedLessonIds.includes(lesson._id);
-                  const active = currentLesson?._id === lesson._id;
+                  // Bug 5: normalize sang string khi so sánh
+                  const completed = completedLessonIds.includes(lesson._id?.toString());
+                  const active = currentLesson?._id?.toString() === lesson._id?.toString();
 
                   return (
                     <button
@@ -718,18 +825,27 @@ export default function LearningPage() {
                       {ytId ? (
                         <LMSVideoPlayer
                           videoId={ytId}
-                          onReach80Percent={() => reportVideoProgress(currentLesson, 80)}
+                          onWatchComplete={() => reportVideoProgress(currentLesson, 50)}
+                          alreadyCompleted={!!videoDoneMap[currentLesson._id]}
                         />
                       ) : (
-                        <video
-                          src={currentLesson.videoUrl}
-                          controls
-                          className="w-full rounded-xl bg-black"
-                          onTimeUpdate={(e) => handleVideoTimeUpdate(e, currentLesson)}
-                        />
+                        <>
+                          <video
+                            src={currentLesson.videoUrl}
+                            controls
+                            className="w-full rounded-xl bg-black"
+                            onTimeUpdate={(e) => handleVideoTimeUpdate(e, currentLesson)}
+                            onSeeking={(e) => handleVideoSeeking(e, currentLesson)}
+                          />
+                          {showHtmlSeekWarn && (
+                            <div className="mt-2 flex items-center justify-center gap-2 text-xs font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg py-2 px-3">
+                              ⚠️ Không thể tua qua phần chưa xem!
+                            </div>
+                          )}
+                        </>
                       )}
                       <p className="text-xs text-slate-400 mt-2">
-                        Xem tối thiểu 80% video để hoàn thành phần video.
+                        Xem tối thiểu 50% video để hoàn thành phần video.
                       </p>
                     </div>
                   );
@@ -755,7 +871,7 @@ export default function LearningPage() {
                     lesson={currentLesson}
                     courseId={courseId}
                     getAuthConfig={getAuthConfig}
-                    alreadyDone={completedLessonIds.includes(currentLesson._id)}
+                    alreadyDone={completedLessonIds.includes(currentLesson._id?.toString())}
                     onComplete={() => markLessonCompletedLocal(currentLesson._id)}
                   />
                 )}
@@ -806,12 +922,12 @@ export default function LearningPage() {
                       Bài học:{' '}
                       <span
                         className={
-                          completedLessonIds.includes(currentLesson._id)
+                          completedLessonIds.includes(currentLesson._id?.toString())
                             ? 'text-green-400 font-semibold'
                             : 'text-yellow-400 font-semibold'
                         }
                       >
-                        {completedLessonIds.includes(currentLesson._id)
+                        {completedLessonIds.includes(currentLesson._id?.toString())
                           ? 'Đã hoàn thành'
                           : 'Chưa hoàn thành'}
                       </span>
