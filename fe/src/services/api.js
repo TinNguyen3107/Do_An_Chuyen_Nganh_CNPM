@@ -170,4 +170,44 @@ export const lessonAPI = {
   delete: (lessonId) => api.delete(`/lessons/${lessonId}`),
 };
 
+// ─────────────────────────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────────────────────────
+export const paymentAPI = {
+  createMomo: (courseId) => api.post('/payments/momo', { courseId }),
+  createMock: (courseId) => api.post('/payments/momo/mock', { courseId }),
+  createATM: (courseId) => api.post('/payments/atm', { courseId }),
+  createBank: (courseId) => api.post('/payments/bank', { courseId }),
+  confirmBank: (orderId, transId) => api.post('/payments/bank/confirm', { orderId, transId }),
+  getStatus: (orderId) => api.get(`/payments/status/${orderId}`),
+  getMyPayments: () => api.get('/payments/my'),
+  getAllPayments: () => api.get('/payments/list'),
+  getStats: () => api.get('/payments/stats'),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// WALLET (Instructor ví tiền)
+// ─────────────────────────────────────────────────────────────────
+export const walletAPI = {
+  getMyWallet: () => api.get('/wallet/me'),
+  updateBankInfo: (data) => api.put('/wallet/bank-info', data),
+  // Admin
+  getAllWallets: () => api.get('/wallet/all'),
+  updateRate: (id, commissionRate) => api.patch(`/wallet/${id}/rate`, { commissionRate }),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// PAYOUTS (Rút tiền)
+// ─────────────────────────────────────────────────────────────────
+export const payoutAPI = {
+  request: (amount) => api.post('/payouts/request', { amount }),
+  getMyPayouts: () => api.get('/payouts/my'),
+  // Admin
+  getPending: () => api.get('/payouts/pending'),
+  getAll: (params = {}) => api.get('/payouts/all', { params }),
+  process: (id) => api.patch(`/payouts/${id}/process`),
+  approve: (id, transactionId) => api.patch(`/payouts/${id}/approve`, { transactionId }),
+  reject: (id, reason) => api.patch(`/payouts/${id}/reject`, { reason }),
+};
+
 export default api;
