@@ -37,23 +37,18 @@ export const createOrUpdateReview = async (userId, courseId, data) => {
   }
 
   const existing = await reviewRepo.findByUserAndCourse(userId, courseId);
-
-  let review;
   if (existing) {
-    review = await reviewRepo.updateReview(existing._id, {
-      rating: data.rating,
-      comment: data.comment || '',
-    });
-  } else {
-    review = await reviewRepo.createReview({
-      user: userId,
-      course: courseId,
-      rating: data.rating,
-      comment: data.comment || '',
-    });
-
-    review = await reviewRepo.findByUserAndCourse(userId, courseId);
+    throw new Error('Bạn đã đánh giá khoá học này rồi, không thể đánh giá lại');
   }
+
+  await reviewRepo.createReview({
+    user: userId,
+    course: courseId,
+    rating: data.rating,
+    comment: data.comment || '',
+  });
+
+  const review = await reviewRepo.findByUserAndCourse(userId, courseId);
 
   await refreshCourseReviewStats(courseId);
 
