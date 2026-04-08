@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { courseAPI, enrollmentAPI } from '../../services/api';
+import { courseAPI, enrollmentAPI, chapterAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import CourseReviewSection from '../../components/CourseReviewSection';
 import toast from 'react-hot-toast';
@@ -38,11 +38,16 @@ export default function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [reloadCourse, setReloadCourse] = useState(0);
+  const [chapters, setChapters] = useState([]);
 
   useEffect(() => {
     setLoading(true);
-    courseAPI.getById(id).then(res => {
-      setCourse(res.data.data);
+    Promise.all([
+      courseAPI.getById(id),
+      chapterAPI.getByCourse(id)
+    ]).then(([resCourse, resChapters]) => {
+      setCourse(resCourse.data.data);
+      setChapters(resChapters.data.data || []);
     }).catch(() => {
       toast.error('Không tìm thấy khoá học');
       navigate('/courses');
@@ -188,6 +193,52 @@ export default function CourseDetail() {
               </h2>
               <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{course.description}</p>
             </div>
+
+            {/* CURRICULUM */}
+            {chapters?.length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span>📚</span> Nội dung khoá học
+                </h2>
+                <div className="mb-4 text-sm text-slate-400">
+                  {chapters.length} chương • {chapters.reduce((acc, ch) => acc + (ch.lessons?.length || 0), 0)} bài giảng
+                </div>
+                <div className="space-y-4">
+                  {chapters.map((chapter, i) => (
+                    <div key={chapter._id} className="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/10">
+                      <div className="bg-slate-800/50 p-4 flex justify-between items-center cursor-default border-b border-slate-800">
+                        <h3 className="font-semibold text-white">Chương {i + 1}: {chapter.title}</h3>
+                        <span className="text-sm text-slate-400">{chapter.lessons?.length || 0} bài học</span>
+                      </div>
+                      {chapter.lessons?.length > 0 && (
+                        <div className="divide-y divide-slate-800/50">
+                          {chapter.lessons.map((lesson, idx) => (
+                            <div key={lesson._id} className="flex items-center justify-between p-4 hover:bg-slate-800/30 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <span className="text-slate-500">
+                                  {lesson.type === 'video' ? '📺' : lesson.type === 'quiz' ? '📝' : '📄'}
+                                </span>
+                                <span className="text-slate-300 text-sm">
+                                  {i + 1}.{idx + 1} {lesson.title}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                                {lesson.type === 'video' && lesson.duration > 0 && (
+                                  <span>{Math.floor(lesson.duration / 60)}:{String(Math.floor(lesson.duration % 60)).padStart(2, '0')}</span>
+                                )}
+                                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <CourseReviewSection
               courseId={id}
