@@ -209,22 +209,7 @@ export default function CreateCourse() {
             <p className="text-slate-400 text-sm mt-0.5">Thiết lập thông tin và nội dung khoá học</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleSave(false)}
-            disabled={loading}
-            className="px-4 py-2.5 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 font-medium rounded-xl transition-colors text-sm disabled:opacity-60"
-          >
-            💾 Lưu nháp
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-500/25 text-sm disabled:opacity-60"
-          >
-            <IconSave /> {loading ? 'Đang lưu...' : 'Lưu & Thêm nội dung'}
-          </button>
-        </div>
+        
       </div>
 
       {/* Tabs */}
