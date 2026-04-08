@@ -133,41 +133,6 @@ export const createMomoPayment = async (userId, courseId) => {
   }
 };
 
-// ── Create Mock MoMo Payment ────────────────────────────────────
-export const createMockPayment = async (userId, courseId) => {
-  const course = await courseRepo.findById(courseId);
-  if (!course) throw new Error('Không tìm thấy khoá học');
-  if (course.status !== 'published') throw new Error('Khoá học chưa được công khai');
-  if (course.isFree) throw new Error('Khoá học này miễn phí, không cần thanh toán');
-
-  const existingEnrollment = await enrollmentRepo.findByUserAndCourse(userId, courseId);
-  if (existingEnrollment) throw new Error('Bạn đã đăng ký khoá học này rồi');
-
-  const orderId = `MOCK${Date.now()}`;
-  const transId = `MOCK_TXN_${Date.now()}`;
-  const amount = Math.round(course.price);
-  const info = `Thanh toán khoá học: ${course.title}`;
-
-  // Create payment record as SUCCESS immediately
-  const payment = await paymentRepo.create({
-    user: userId, course: courseId, orderId, amount,
-    orderInfo: info, method: 'momo_mock', status: 'success',
-    transId, paidAt: new Date(),
-  });
-
-  // Auto-enroll student
-  await enrollmentRepo.createEnrollment({
-    user: userId, course: courseId, enrollmentType: 'paid', payment: payment._id,
-  });
-  await courseRepo.incrementStudentCount(courseId);
-
-  // Tính hoa hồng tự động
-  await processCommission(payment);
-
-  console.log(`\n=== Mock Payment SUCCESS: ${orderId} | ${amount} VND | Course: ${courseId} ===`);
-  return { payment, orderId, amount: String(amount), transId };
-};
-
 // ── Create ATM/Bank Card Payment ────────────────────────────────
 export const createATMPayment = async (userId, courseId) => {
   const course = await courseRepo.findById(courseId);

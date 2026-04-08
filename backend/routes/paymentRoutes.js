@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   createMomoPayment,
-  createMockPayment,
   createATMPayment,
   createBankPayment,
   confirmBankPayment,
@@ -20,7 +19,6 @@ const router = express.Router();
 
 // ── Student payment routes ──────────────────────────────────────
 router.post('/momo', protect, validate(createPaymentSchema), createMomoPayment);
-router.post('/momo/mock', protect, validate(createPaymentSchema), createMockPayment);
 router.post('/atm', protect, validate(createPaymentSchema), createATMPayment);
 router.post('/bank', protect, validate(createPaymentSchema), createBankPayment);
 

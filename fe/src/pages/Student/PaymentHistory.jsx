@@ -26,7 +26,7 @@ export default function PaymentHistory() {
     cancelled: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
   };
   const statusLabels = { success: '✅ Thành công', pending: '⏳ Đang chờ', failed: '❌ Thất bại', cancelled: '🚫 Đã huỷ' };
-  const methodLabels = { momo: '💳 MoMo', momo_mock: '🧪 Mock', atm: '🏦 ATM', bank: '📱 Chuyển khoản' };
+  const methodLabels = { momo: '💳 MoMo', atm: '🏦 ATM', bank: '📱 Chuyển khoản' };
 
   if (loading) return (
     <div className="p-6 animate-pulse space-y-4">

@@ -15,20 +15,6 @@ export const createMomoPayment = asyncHandler(async (req, res) => {
   res.json({ success: true, ...result });
 });
 
-/**
- * @desc    Create Mock MoMo payment (for testing without MoMo app)
- * @route   POST /api/payments/momo/mock
- * @access  Private (student)
- */
-export const createMockPayment = asyncHandler(async (req, res) => {
-  const { courseId } = req.body;
-  const result = await paymentService.createMockPayment(req.user._id, courseId);
-  res.json({
-    success: true,
-    message: 'Mock thanh toán thành công! Bạn đã được ghi danh vào khoá học.',
-    ...result,
-  });
-});
 
 /**
  * @desc    Create ATM / Bank card payment
