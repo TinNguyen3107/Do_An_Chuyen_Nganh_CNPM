@@ -36,12 +36,18 @@ const imageFileFilter = (req, file, cb) => {
 };
 
 // ─── Upload instances ─────────────────────────────────────────────
+// FIX TIẾNG VIỆT: defCharset + defParamCharset buộc busboy dùng UTF-8
+// thay vì latin1 (mặc định trên Windows) khi parse multipart/form-data.
+// Nếu thiếu 2 option này, mọi ký tự Unicode (tiếng Việt) trong các
+// trường text của FormData sẽ bị encode sai → lỗi "???" hoặc validation fail.
 
 /** For CV / document uploads (instructor application) */
 export const uploadCV = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: cvFileFilter,
+  defCharset: 'utf8',
+  defParamCharset: 'utf8',
 });
 
 /** For image uploads (course thumbnail, avatar) */
@@ -49,6 +55,8 @@ export const uploadImage = multer({
   storage,
   limits: { fileSize: 3 * 1024 * 1024 }, // 3 MB
   fileFilter: imageFileFilter,
+  defCharset: 'utf8',
+  defParamCharset: 'utf8',
 });
 
 // Default export for backward compatibility

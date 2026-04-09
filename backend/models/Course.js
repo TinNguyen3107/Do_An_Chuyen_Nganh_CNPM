@@ -102,7 +102,14 @@ courseSchema.pre('save', function (next) {
 });
 
 // Indexes for fast searches
-courseSchema.index({ title: 'text', description: 'text', tags: 'text' });
+// FIX: thêm language_override: 'search_lang' để MongoDB KHÔNG dùng field
+// 'language' trong document làm language identifier cho text search.
+// Nếu thiếu option này, MongoDB sẽ đọc field 'language' của course (VD: "Tiếng Việt")
+// và cố dùng nó làm language code → throw "language override unsupported: Tiếng Việt".
+courseSchema.index(
+  { title: 'text', description: 'text', tags: 'text' },
+  { language_override: 'search_lang' }  // point to non-existent field → disable override
+);
 courseSchema.index({ status: 1, category: 1 });
 courseSchema.index({ instructor: 1 });
 
