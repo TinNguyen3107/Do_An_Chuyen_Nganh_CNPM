@@ -511,21 +511,7 @@ export default function EditCourse() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {activeTab !== 'curriculum' && !(courseData.reviewStatus === 'pending' && courseData.submittedAt) && (
-            <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-500/25 text-sm disabled:opacity-60">
-              <IconSave /> {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </button>
-          )}
-          {(courseData.reviewStatus === 'approved' || courseData.reviewStatus === 'rejected' ||
-            (courseData.reviewStatus === 'pending' && !courseData.submittedAt)) && (
-            <button onClick={handleSubmit}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25 text-sm">
-              🚀 {courseData.reviewStatus === 'rejected' ? 'Gửi duyệt lại' : courseData.reviewStatus === 'approved' ? 'Gửi duyệt cập nhật' : 'Gửi duyệt'}
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* ── Status banners ── */}

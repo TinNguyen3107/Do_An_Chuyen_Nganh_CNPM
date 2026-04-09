@@ -175,7 +175,6 @@ export const lessonAPI = {
 // ─────────────────────────────────────────────────────────────────
 export const paymentAPI = {
   createMomo: (courseId) => api.post('/payments/momo', { courseId }),
-  createMock: (courseId) => api.post('/payments/momo/mock', { courseId }),
   createATM: (courseId) => api.post('/payments/atm', { courseId }),
   createBank: (courseId) => api.post('/payments/bank', { courseId }),
   confirmBank: (orderId, transId) => api.post('/payments/bank/confirm', { orderId, transId }),

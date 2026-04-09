@@ -36,13 +36,7 @@ export default function Checkout() {
             window.open(res.data.payUrl, '_blank');
           }
           break;
-        case 'mock':
-          res = await paymentAPI.createMock(courseId);
-          if (res.data.success) {
-            setResult({ type: 'mock_success', data: res.data });
-            toast.success('Thanh toán thành công! 🎉');
-          }
-          break;
+
         case 'atm':
           res = await paymentAPI.createATM(courseId);
           if (res.data.success && res.data.payUrl) {
@@ -133,7 +127,6 @@ export default function Checkout() {
                 {[
                   { id: 'momo', icon: '💳', name: 'Ví MoMo', desc: 'Thanh toán qua ví điện tử MoMo', color: 'pink' },
                   { id: 'atm', icon: '🏦', name: 'Thẻ ATM / Ngân hàng', desc: 'Nhập thẻ ATM hoặc tài khoản NH', color: 'blue' },
-                  { id: 'mock', icon: '🧪', name: 'Mock (Demo)', desc: 'Thanh toán thử không cần ví', color: 'purple' },
                 ].map(m => (
                   <button
                     key={m.id}
@@ -165,8 +158,7 @@ export default function Checkout() {
                 disabled={processing}
                 className={`w-full py-3.5 font-bold rounded-xl transition-all text-white shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed
                   ${method === 'momo' ? 'bg-gradient-to-r from-pink-600 to-pink-500 shadow-pink-600/30 hover:shadow-pink-600/50'
-                    : method === 'atm' ? 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-blue-600/30 hover:shadow-blue-600/50'
-                    : 'bg-gradient-to-r from-purple-600 to-purple-500 shadow-purple-600/30 hover:shadow-purple-600/50'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-blue-600/30 hover:shadow-blue-600/50'
                   }`}
               >
                 {processing ? (
@@ -188,25 +180,7 @@ export default function Checkout() {
                   Kết quả thanh toán
                 </h2>
 
-                {/* Mock success */}
-                {result.type === 'mock_success' && (
-                  <div>
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center mb-4">
-                      <div className="text-5xl mb-3">🎉</div>
-                      <div className="text-xl font-bold text-green-400 mb-1">Thanh toán thành công!</div>
-                      <p className="text-sm text-slate-400">Bạn đã được ghi danh vào khoá học</p>
-                    </div>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm py-2 border-b border-slate-800"><span className="text-slate-400">Order ID</span><span className="font-mono text-xs text-white">{result.data.orderId}</span></div>
-                      <div className="flex justify-between text-sm py-2 border-b border-slate-800"><span className="text-slate-400">Số tiền</span><span className="font-bold text-amber-400">{fmt(result.data.amount)}đ</span></div>
-                      <div className="flex justify-between text-sm py-2 border-b border-slate-800"><span className="text-slate-400">Trans ID</span><span className="font-mono text-xs text-white">{result.data.transId}</span></div>
-                      <div className="flex justify-between text-sm py-2"><span className="text-slate-400">Trạng thái</span><span className="text-green-400 font-semibold">✅ Thành công</span></div>
-                    </div>
-                    <Link to="/student/my-courses" className="block w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-center text-sm transition-all">
-                      Vào học ngay →
-                    </Link>
-                  </div>
-                )}
+
 
                 {/* Redirect (MoMo / ATM) */}
                 {result.type === 'redirect' && (
