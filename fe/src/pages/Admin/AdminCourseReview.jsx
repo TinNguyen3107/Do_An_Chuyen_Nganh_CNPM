@@ -421,7 +421,7 @@ export default function AdminCourseReview() {
                           </div>
                         ))}
                         {(!chapter.lessons || chapter.lessons.length === 0) && (
-                          <div className="text-xs text-slate-500 ml-8 italic italic">Chưa có bài học trong chương này</div>
+                          <div className="text-xs text-slate-500 ml-8 italic">Chưa có bài học trong chương này</div>
                         )}
                       </div>
                     </div>
