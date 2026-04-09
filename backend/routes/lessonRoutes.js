@@ -21,8 +21,8 @@ export default router;
 // ── Standalone lesson router: /api/lessons/:id ────────────────────
 export const lessonStandaloneRouter = express.Router();
 
-// GET /api/lessons/:id → chi tiết bài học
-lessonStandaloneRouter.get('/:id', protect, getLesson);
+// GET /api/lessons/:id → chi tiết bài học (instructor + admin duyệt khoá học)
+lessonStandaloneRouter.get('/:id', protect, authorize('instructor', 'admin'), getLesson);
 
 // PUT /api/lessons/:id → cập nhật bài học
 lessonStandaloneRouter.put(

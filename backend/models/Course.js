@@ -51,7 +51,7 @@ const courseSchema = new mongoose.Schema(
     },
     language: {
       type: String,
-      default: 'Tiếng Việt',
+      default: 'English',
     },
     status: {
       type: String,

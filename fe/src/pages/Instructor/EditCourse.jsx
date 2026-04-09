@@ -392,7 +392,7 @@ export default function EditCourse() {
   const [preview,   setPreview]     = useState('');
   const [form, setForm] = useState({
     title: '', description: '', shortDescription: '',
-    category: '', price: 0, level: 'all', language: 'Tiếng Việt',
+    category: '', price: 0, level: 'all', language: 'English',
     requirements: [''], objectives: [''], tags: '', status: 'draft',
   });
   // Trạng thái duyệt — tách riêng để không gửi lên backend khi save
@@ -407,7 +407,7 @@ export default function EditCourse() {
           shortDescription: c.shortDescription || '',
           category: c.category?._id || c.category || '',
           price: c.price || 0, level: c.level || 'all',
-          language: c.language || 'Tiếng Việt',
+          language: c.language || 'English',
           requirements: c.requirements?.length ? c.requirements : [''],
           objectives:   c.objectives?.length   ? c.objectives   : [''],
           tags: c.tags?.join(', ') || '', status: c.status,
