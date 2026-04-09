@@ -14,6 +14,9 @@ export default function AdminCourseReview() {
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [filterTab, setFilterTab] = useState('pending');
+  const [expandedLessonId, setExpandedLessonId] = useState(null);
+  const [lessonDetail, setLessonDetail] = useState(null);
+  const [loadingLesson, setLoadingLesson] = useState(false);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('26tech_user') || '{}');
@@ -66,6 +69,29 @@ export default function AdminCourseReview() {
     setShowModal(false);
     setSelectedCourse(null);
     setRejectionReason('');
+    setExpandedLessonId(null);
+    setLessonDetail(null);
+  };
+
+  const handleExpandLesson = async (lesson) => {
+    if (expandedLessonId === lesson._id) {
+      // Nếu đã expand, click lại để collapse
+      setExpandedLessonId(null);
+      setLessonDetail(null);
+      return;
+    }
+
+    try {
+      setLoadingLesson(true);
+      const response = await adminCourseReviewAPI.getLessonDetail(lesson._id);
+      setLessonDetail(response.data.data);
+      setExpandedLessonId(lesson._id);
+    } catch (error) {
+      console.error('Lỗi khi tải chi tiết bài học:', error);
+      toast.error('Lỗi khi tải chi tiết bài học');
+    } finally {
+      setLoadingLesson(false);
+    }
   };
 
   const handleApproveCourse = async (courseId) => {
@@ -272,17 +298,130 @@ export default function AdminCourseReview() {
                       </div>
                       <div className="space-y-3">
                         {chapter.lessons?.map((lesson, lessonIdx) => (
-                          <div key={lesson._id} className="text-sm text-slate-300 ml-8 flex items-center gap-3">
-                            <span className="w-1.5 h-1.5 bg-slate-600 rounded-full"></span>
-                            <div className="flex-1">
-                              <span className="font-medium">{lesson.title}</span>
-                              <span className="mx-2 text-slate-600">•</span>
-                              <span className="text-xs text-slate-500 uppercase">{lesson.type}</span>
-                            </div>
+                          <div key={lesson._id}>
+                            <button
+                              onClick={() => handleExpandLesson(lesson)}
+                              disabled={loadingLesson}
+                              className="w-full text-left text-sm text-slate-300 ml-8 flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700/30 transition group"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full transition ${expandedLessonId === lesson._id ? 'bg-blue-400' : 'bg-slate-600'}`}></span>
+                              <div className="flex-1">
+                                <span className="font-medium group-hover:text-blue-400">{lesson.title}</span>
+                                <span className="mx-2 text-slate-600">•</span>
+                                <span className="text-xs text-slate-500 uppercase">{lesson.type}</span>
+                              </div>
+                              <span className={`text-xs text-slate-500 transition ${expandedLessonId === lesson._id ? 'rotate-180' : ''}`}>▼</span>
+                            </button>
+
+                            {/* Chi tiết lesson */}
+                            {expandedLessonId === lesson._id && (
+                              <div className="ml-8 mt-3 p-4 bg-slate-900/50 border border-slate-700 rounded-lg space-y-3">
+                                {loadingLesson ? (
+                                  <div className="text-slate-400 text-sm">Đang tải chi tiết bài học...</div>
+                                ) : lessonDetail ? (
+                                  <>
+                                    {/* Video */}
+                                    {lessonDetail.type === 'video' && (
+                                      <div className="space-y-2">
+                                        <p className="text-xs text-slate-500 uppercase font-semibold">📹 Video</p>
+                                        {lessonDetail.video_url ? (
+                                          <div className="space-y-2">
+                                            {/* YouTube embed */}
+                                            {(lessonDetail.video_url.includes('youtube.com') || lessonDetail.video_url.includes('youtu.be')) ? (
+                                              <div className="aspect-video bg-slate-950 rounded-lg overflow-hidden border border-slate-700">
+                                                <iframe
+                                                  width="100%"
+                                                  height="100%"
+                                                  src={lessonDetail.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                                                  title="Video bài học"
+                                                  frameBorder="0"
+                                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                  allowFullScreen
+                                                  className="w-full h-full"
+                                                ></iframe>
+                                              </div>
+                                            ) : (
+                                              // Generic video player
+                                              <div className="aspect-video bg-slate-950 rounded-lg overflow-hidden border border-slate-700">
+                                                <video
+                                                  width="100%"
+                                                  height="100%"
+                                                  controls
+                                                  className="w-full h-full"
+                                                >
+                                                  <source src={lessonDetail.video_url} type="video/mp4" />
+                                                  Trình duyệt của bạn không hỗ trợ video
+                                                </video>
+                                              </div>
+                                            )}
+                                            <a 
+                                              href={lessonDetail.video_url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="text-blue-400 hover:text-blue-300 hover:underline break-all text-xs"
+                                            >
+                                              {lessonDetail.video_url}
+                                            </a>
+                                          </div>
+                                        ) : (
+                                          <p className="text-slate-500 text-xs italic">Chưa có video</p>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Text Content */}
+                                    {lessonDetail.type === 'text' && (
+                                      <div className="space-y-2">
+                                        <p className="text-xs text-slate-500 uppercase font-semibold">📝 Nội dung bài đọc</p>
+                                        {lessonDetail.text_content ? (
+                                          <div className="bg-slate-950 p-3 rounded border border-slate-700 text-slate-200 text-sm max-h-64 overflow-y-auto whitespace-pre-wrap">
+                                            {lessonDetail.text_content}
+                                          </div>
+                                        ) : (
+                                          <p className="text-slate-500 text-xs italic">Chưa có nội dung</p>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Quiz */}
+                                    {lessonDetail.type === 'quiz' && (
+                                      <div className="space-y-3">
+                                        <p className="text-xs text-slate-500 uppercase font-semibold">❓ Câu hỏi trắc nghiệm</p>
+                                        {lessonDetail.questions && lessonDetail.questions.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {lessonDetail.questions.map((q, qIdx) => (
+                                              <div key={qIdx} className="bg-slate-950 p-3 rounded border border-slate-700">
+                                                <p className="text-slate-200 text-sm font-medium mb-2">
+                                                  <span className="text-slate-500">Q{qIdx + 1}:</span> {q.question}
+                                                </p>
+                                                <ul className="space-y-1 ml-4">
+                                                  {q.options.map((opt, optIdx) => (
+                                                    <li key={optIdx} className={`text-xs text-slate-300 flex items-center gap-2 ${optIdx === q.correctIndex ? 'text-green-400' : ''}`}>
+                                                      <span className={optIdx === q.correctIndex ? 'text-green-500' : 'text-slate-600'}>
+                                                        {optIdx === q.correctIndex ? '✓' : '○'}
+                                                      </span>
+                                                      {opt}
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <p className="text-slate-500 text-xs italic">Chưa có câu hỏi</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <p className="text-slate-500 text-xs">Không thể tải chi tiết bài học</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                         {(!chapter.lessons || chapter.lessons.length === 0) && (
-                          <div className="text-xs text-slate-500 ml-8 italic italic">Chưa có bài học trong chương này</div>
+                          <div className="text-xs text-slate-500 ml-8 italic">Chưa có bài học trong chương này</div>
                         )}
                       </div>
                     </div>

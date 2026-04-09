@@ -94,6 +94,7 @@ export const adminCourseReviewAPI = {
   getByIdForReview:  (id)          => api.get(`/admin-review/${id}/review`),
   approve:           (id)          => api.patch(`/admin-review/${id}/approve`),
   reject:            (id, rejectionReason) => api.patch(`/admin-review/${id}/reject`, { rejectionReason }),
+  getLessonDetail:   (lessonId)    => api.get(`/lessons/${lessonId}`),
 };
 
 // ─────────────────────────────────────────────────────────────────

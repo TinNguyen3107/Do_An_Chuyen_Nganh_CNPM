@@ -36,7 +36,7 @@ export default function CreateCourse() {
   const [form, setForm] = useState({
     title: '', description: '', shortDescription: '',
     category: '', price: 0, level: 'all',
-    language: 'Tiếng Việt',
+    language: 'English', 
     requirements: [''], objectives: [''], tags: '',
   });
 
