@@ -42,7 +42,7 @@ export const createCourseSchema = Joi.object({
     'any.only': 'Cấp độ không hợp lệ',
   }),
 
-  language: Joi.string().max(50).default('English').optional(),
+  language: Joi.string().max(50).default('Tiếng Việt').optional(),
 
   // These arrive as JSON-stringified arrays from multipart/form-data
   requirements: Joi.alternatives()

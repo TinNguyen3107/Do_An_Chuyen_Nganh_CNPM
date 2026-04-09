@@ -129,7 +129,7 @@ export default function CourseDetail() {
             </div>
             <Badge color="blue">{course.category?.name}</Badge>
             <Badge color="purple">{levelLabels[course.level] || 'Tất cả'}</Badge>
-            <Badge color="amber">🌐 {course.language || 'English'}</Badge>
+            <Badge color="amber">🌐 {course.language || 'Tiếng Việt'}</Badge>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-slate-300">
@@ -306,7 +306,7 @@ export default function CourseDetail() {
                     { icon: '⭐', text: `${course.totalReviews || 0} đánh giá` },
                     { icon: '📚', text: `${course.totalLectures || 0} bài giảng` },
                     { icon: '⏱', text: `${course.totalDuration || 0} phút học` },
-                    { icon: '🌍', text: course.language || 'English' },
+                    { icon: '🌍', text: course.language || 'Tiếng Việt' },
                     { icon: '♾️', text: 'Truy cập trọn đời' },
                   ].map(({ icon, text }) => (
                     <div key={text} className="flex items-center gap-3 text-sm text-slate-300">
