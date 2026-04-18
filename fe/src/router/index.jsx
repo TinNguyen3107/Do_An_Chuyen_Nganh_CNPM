@@ -79,6 +79,13 @@ export default function AppRouter() {
       {/* PAYMENT RESULT (public — MoMo redirect URL) */}
       <Route path="/payment-result" element={<PaymentResult />} />
 
+      {/* LEARNING PAGE — full-screen, no dashboard sidebar */}
+      <Route path="/student/learning/:courseId" element={
+        <ProtectedRoute roles={['student', 'admin', 'instructor']}>
+          <LearningPage />
+        </ProtectedRoute>
+      } />
+
       {/* STUDENT DASHBOARD */}
       <Route element={<ProtectedRoute roles={['student', 'admin', 'instructor']}><DashboardLayout title="Học Viên" sidebarLinks={[
         { path: '/student/dashboard', label: 'Tổng quan', icon: <I.Student /> },
@@ -90,7 +97,6 @@ export default function AppRouter() {
         <Route path="/student/my-courses" element={<MyCourses />} />
         <Route path="/student/payment-history" element={<PaymentHistory />} />
         <Route path="/student/profile" element={<ProfilePage />} />
-        <Route path="/student/learning/:courseId" element={<LearningPage />} />
       </Route>
 
       {/* INSTRUCTOR DASHBOARD */}

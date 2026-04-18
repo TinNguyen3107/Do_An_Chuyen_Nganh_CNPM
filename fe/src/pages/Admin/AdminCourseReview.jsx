@@ -23,10 +23,7 @@ export default function AdminCourseReview() {
   const token = user.token;
 
   useEffect(() => {
-    if (!token) {
-      navigate('/auth');
-      return;
-    }
+    if (!token) { navigate('/auth'); return; }
     fetchCourses();
   }, [page, filterTab, token, navigate]);
 
@@ -39,12 +36,10 @@ export default function AdminCourseReview() {
           ? await adminCourseReviewAPI.getApproved(params)
           : filterTab === 'rejected'
           ? await adminCourseReviewAPI.getRejected(params)
-          : await adminCourseReviewAPI.getPending(params);
-
+          : await adminCourseReviewAPI.getPendingNew(params);
       setCourses(response.data.courses || []);
       setTotalPages(response.data.totalPages || 1);
-    } catch (error) {
-      console.error('Lỗi khi tải danh sách khoá học:', error);
+    } catch {
       toast.error('Lỗi khi tải danh sách khoá học');
     } finally {
       setLoading(false);
@@ -57,8 +52,7 @@ export default function AdminCourseReview() {
       const response = await adminCourseReviewAPI.getByIdForReview(course._id);
       setSelectedCourse(response.data.data);
       setShowModal(true);
-    } catch (error) {
-      console.error('Lỗi khi tải chi tiết khoá học:', error);
+    } catch {
       toast.error('Lỗi khi tải chi tiết khoá học');
     } finally {
       setLoading(false);
@@ -75,19 +69,16 @@ export default function AdminCourseReview() {
 
   const handleExpandLesson = async (lesson) => {
     if (expandedLessonId === lesson._id) {
-      // Nếu đã expand, click lại để collapse
       setExpandedLessonId(null);
       setLessonDetail(null);
       return;
     }
-
     try {
       setLoadingLesson(true);
       const response = await adminCourseReviewAPI.getLessonDetail(lesson._id);
       setLessonDetail(response.data.data);
       setExpandedLessonId(lesson._id);
-    } catch (error) {
-      console.error('Lỗi khi tải chi tiết bài học:', error);
+    } catch {
       toast.error('Lỗi khi tải chi tiết bài học');
     } finally {
       setLoadingLesson(false);
@@ -96,42 +87,53 @@ export default function AdminCourseReview() {
 
   const handleApproveCourse = async (courseId) => {
     if (!window.confirm('Bạn có chắc muốn duyệt khoá học này?')) return;
-
     try {
       setActionLoading(true);
       await adminCourseReviewAPI.approve(courseId);
       toast.success('Khoá học đã được duyệt thành công');
       closeModal();
       fetchCourses();
-    } catch (error) {
-      console.error('Lỗi khi duyệt khoá học:', error);
-      toast.error(error.response?.data?.message || 'Lỗi khi duyệt khoá học');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi khi duyệt khoá học');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleRejectCourse = async (courseId) => {
-    if (!rejectionReason.trim()) {
-      toast.error('Vui lòng nhập lý do từ chối');
-      return;
-    }
-
+    if (!rejectionReason.trim()) { toast.error('Vui lòng nhập lý do từ chối'); return; }
     if (!window.confirm('Bạn có chắc muốn từ chối khoá học này?')) return;
-
     try {
       setActionLoading(true);
       await adminCourseReviewAPI.reject(courseId, rejectionReason);
       toast.success('Khoá học đã bị từ chối');
       closeModal();
       fetchCourses();
-    } catch (error) {
-      console.error('Lỗi khi từ chối khoá học:', error);
-      toast.error(error.response?.data?.message || 'Lỗi khi từ chối khoá học');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi khi từ chối khoá học');
     } finally {
       setActionLoading(false);
     }
   };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  const statusBadge = (status) => {
+    const map = {
+      pending:  'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+      rejected: 'bg-red-500/15 text-red-400 border-red-500/30',
+    };
+    const label = { pending: 'Chờ duyệt', approved: 'Đã duyệt', rejected: 'Từ chối' };
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${map[status] || ''}`}>
+        {label[status] || status}
+      </span>
+    );
+  };
+
+  const levelLabel = (l) => ({ beginner: 'Người mới bắt đầu', intermediate: 'Trung cấp', advanced: 'Nâng cao', all: 'Tất cả cấp độ' }[l] || 'N/A');
+
+  const totalLessons = (course) => course?.chapters?.reduce((a, ch) => a + (ch.lessons?.length || 0), 0) || 0;
 
   return (
     <div className="animate-fade-in max-w-7xl">
@@ -140,18 +142,14 @@ export default function AdminCourseReview() {
         <p className="text-slate-400 text-sm">Kiểm tra và duyệt khoá học từ giảng viên</p>
       </div>
 
+      {/* ── Tabs ── */}
       <div className="flex gap-4 mb-6 border-b border-slate-700">
         {['pending', 'approved', 'rejected'].map((tab) => (
           <button
             key={tab}
-            onClick={() => {
-              setFilterTab(tab);
-              setPage(1);
-            }}
+            onClick={() => { setFilterTab(tab); setPage(1); }}
             className={`px-4 py-3 font-medium transition ${
-              filterTab === tab
-                ? 'text-white border-b-2 border-blue-500'
-                : 'text-slate-400 hover:text-slate-300'
+              filterTab === tab ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-slate-300'
             }`}
           >
             {tab === 'pending' && '⏳ Chờ Duyệt'}
@@ -161,6 +159,7 @@ export default function AdminCourseReview() {
         ))}
       </div>
 
+      {/* ── Table ── */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
         {loading ? (
           <div className="p-8 text-center text-slate-400">Đang tải...</div>
@@ -190,25 +189,11 @@ export default function AdminCourseReview() {
                         <div className="text-xs text-slate-500">{course.category?.name}</div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-300">{course.instructor?.name || 'N/A'}</td>
+                      <td className="px-6 py-4">{statusBadge(course.reviewStatus)}</td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            course.reviewStatus === 'pending'
-                              ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                              : course.reviewStatus === 'approved'
-                              ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-                              : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                          }`}
-                        >
-                          {course.reviewStatus === 'pending' && '⏳ Chờ duyệt'}
-                          {course.reviewStatus === 'approved' && '✅ Đã duyệt'}
-                          {course.reviewStatus === 'rejected' && '❌ Từ chối'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
                         <button
                           onClick={() => handleViewDetail(course)}
-                          className="px-4 py-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700 hover:border-blue-500 rounded-lg transition-all"
+                          className="px-4 py-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700 hover:border-blue-500 rounded-lg transition-all text-sm"
                         >
                           Xem Chi Tiết
                         </button>
@@ -238,263 +223,212 @@ export default function AdminCourseReview() {
         )}
       </div>
 
+      {/* ── Detail Modal ──────────────────────────────────────────────────────── */}
       {showModal && selectedCourse && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-h-[90vh] overflow-y-auto max-w-4xl w-full shadow-2xl">
-            <div className="sticky top-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-8 py-5 flex justify-between items-center z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-blue-500">📘</span> Chi Tiết Khoá Học
-              </h2>
-              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition">
+
+            {/* Header */}
+            <div className="sticky top-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-start z-10">
+              <div>
+                <div className="flex items-center gap-3 mb-1 flex-wrap">
+                  <h2 className="text-lg font-bold text-white">{selectedCourse.title}</h2>
+                  {statusBadge(selectedCourse.reviewStatus)}
+                </div>
+                <p className="text-sm text-slate-400">
+                  <span>👤 Giảng viên: <span className="text-slate-300 font-medium">{selectedCourse.instructor?.name}</span></span>
+                  <span className="mx-2 text-slate-600">·</span>
+                  <span>Danh mục: <span className="text-blue-400 font-medium">{selectedCourse.category?.name}</span></span>
+                </p>
+              </div>
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition flex-shrink-0 mt-1">
                 ✕
               </button>
             </div>
 
-            <div className="p-8 space-y-8">
-              <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
-                  <h3 className="text-lg font-bold text-white">📚 Thông Tin Chung</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <p className="text-slate-400 text-xs uppercase font-semibold">Tên Khoá Học</p>
-                    <p className="text-white text-lg font-medium">{selectedCourse.title}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-400 text-xs uppercase font-semibold">Giảng Viên</p>
-                    <p className="text-white text-lg font-medium">{selectedCourse.instructor?.name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-400 text-xs uppercase font-semibold">Danh Mục</p>
-                    <p className="text-white font-medium">{selectedCourse.category?.name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-400 text-xs uppercase font-semibold">Mức Độ</p>
-                    <p className="text-white font-medium capitalize">{selectedCourse.level}</p>
-                  </div>
-                </div>
-                <div className="mt-6 space-y-1">
-                  <p className="text-slate-400 text-xs uppercase font-semibold">Mô Tả Ngắn</p>
-                  <p className="text-slate-300 italic">{selectedCourse.shortDescription || 'Không có mô tả ngắn'}</p>
-                </div>
-                <div className="mt-4 space-y-1">
-                  <p className="text-slate-400 text-xs uppercase font-semibold">Mô Tả Chi Tiết</p>
-                  <p className="text-slate-200 mt-2 whitespace-pre-wrap">{selectedCourse.description}</p>
-                </div>
-              </section>
+            {/* Body: 2 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
 
-              <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-8 w-1 bg-purple-500 rounded-full"></div>
-                  <h3 className="text-lg font-bold text-white">📖 Đề cương khoá học</h3>
-                </div>
-                <div className="space-y-4">
-                  {selectedCourse.chapters?.map((chapter, idx) => (
-                    <div key={chapter._id} className="bg-slate-800/40 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition">
-                      <div className="font-bold text-white mb-4 flex items-center gap-2">
-                        <span className="w-6 h-6 bg-slate-700 rounded-md flex items-center justify-center text-xs text-blue-400">{idx + 1}</span>
-                        {chapter.title}
-                      </div>
-                      <div className="space-y-3">
-                        {chapter.lessons?.map((lesson, lessonIdx) => (
-                          <div key={lesson._id}>
-                            <button
-                              onClick={() => handleExpandLesson(lesson)}
-                              disabled={loadingLesson}
-                              className="w-full text-left text-sm text-slate-300 ml-8 flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700/30 transition group"
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full transition ${expandedLessonId === lesson._id ? 'bg-blue-400' : 'bg-slate-600'}`}></span>
-                              <div className="flex-1">
-                                <span className="font-medium group-hover:text-blue-400">{lesson.title}</span>
-                                <span className="mx-2 text-slate-600">•</span>
-                                <span className="text-xs text-slate-500 uppercase">{lesson.type}</span>
-                              </div>
-                              <span className={`text-xs text-slate-500 transition ${expandedLessonId === lesson._id ? 'rotate-180' : ''}`}>▼</span>
-                            </button>
-
-                            {/* Chi tiết lesson */}
-                            {expandedLessonId === lesson._id && (
-                              <div className="ml-8 mt-3 p-4 bg-slate-900/50 border border-slate-700 rounded-lg space-y-3">
-                                {loadingLesson ? (
-                                  <div className="text-slate-400 text-sm">Đang tải chi tiết bài học...</div>
-                                ) : lessonDetail ? (
-                                  <>
-                                    {/* Video */}
-                                    {lessonDetail.type === 'video' && (
-                                      <div className="space-y-2">
-                                        <p className="text-xs text-slate-500 uppercase font-semibold">📹 Video</p>
-                                        {lessonDetail.video_url ? (
-                                          <div className="space-y-2">
-                                            {/* YouTube embed */}
-                                            {(lessonDetail.video_url.includes('youtube.com') || lessonDetail.video_url.includes('youtu.be')) ? (
-                                              <div className="aspect-video bg-slate-950 rounded-lg overflow-hidden border border-slate-700">
-                                                <iframe
-                                                  width="100%"
-                                                  height="100%"
-                                                  src={lessonDetail.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                                                  title="Video bài học"
-                                                  frameBorder="0"
-                                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                  allowFullScreen
-                                                  className="w-full h-full"
-                                                ></iframe>
-                                              </div>
-                                            ) : (
-                                              // Generic video player
-                                              <div className="aspect-video bg-slate-950 rounded-lg overflow-hidden border border-slate-700">
-                                                <video
-                                                  width="100%"
-                                                  height="100%"
-                                                  controls
-                                                  className="w-full h-full"
-                                                >
-                                                  <source src={lessonDetail.video_url} type="video/mp4" />
-                                                  Trình duyệt của bạn không hỗ trợ video
-                                                </video>
-                                              </div>
-                                            )}
-                                            <a 
-                                              href={lessonDetail.video_url} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              className="text-blue-400 hover:text-blue-300 hover:underline break-all text-xs"
-                                            >
-                                              {lessonDetail.video_url}
-                                            </a>
-                                          </div>
-                                        ) : (
-                                          <p className="text-slate-500 text-xs italic">Chưa có video</p>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {/* Text Content */}
-                                    {lessonDetail.type === 'text' && (
-                                      <div className="space-y-2">
-                                        <p className="text-xs text-slate-500 uppercase font-semibold">📝 Nội dung bài đọc</p>
-                                        {lessonDetail.text_content ? (
-                                          <div className="bg-slate-950 p-3 rounded border border-slate-700 text-slate-200 text-sm max-h-64 overflow-y-auto whitespace-pre-wrap">
-                                            {lessonDetail.text_content}
-                                          </div>
-                                        ) : (
-                                          <p className="text-slate-500 text-xs italic">Chưa có nội dung</p>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {/* Quiz */}
-                                    {lessonDetail.type === 'quiz' && (
-                                      <div className="space-y-3">
-                                        <p className="text-xs text-slate-500 uppercase font-semibold">❓ Câu hỏi trắc nghiệm</p>
-                                        {lessonDetail.questions && lessonDetail.questions.length > 0 ? (
-                                          <div className="space-y-3">
-                                            {lessonDetail.questions.map((q, qIdx) => (
-                                              <div key={qIdx} className="bg-slate-950 p-3 rounded border border-slate-700">
-                                                <p className="text-slate-200 text-sm font-medium mb-2">
-                                                  <span className="text-slate-500">Q{qIdx + 1}:</span> {q.question}
-                                                </p>
-                                                <ul className="space-y-1 ml-4">
-                                                  {q.options.map((opt, optIdx) => (
-                                                    <li key={optIdx} className={`text-xs text-slate-300 flex items-center gap-2 ${optIdx === q.correctIndex ? 'text-green-400' : ''}`}>
-                                                      <span className={optIdx === q.correctIndex ? 'text-green-500' : 'text-slate-600'}>
-                                                        {optIdx === q.correctIndex ? '✓' : '○'}
-                                                      </span>
-                                                      {opt}
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <p className="text-slate-500 text-xs italic">Chưa có câu hỏi</p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <p className="text-slate-500 text-xs">Không thể tải chi tiết bài học</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {(!chapter.lessons || chapter.lessons.length === 0) && (
-                          <div className="text-xs text-slate-500 ml-8 italic">Chưa có bài học trong chương này</div>
-                        )}
-                      </div>
+              {/* Left: Thumbnail + Description */}
+              <div className="p-6 space-y-5">
+                <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-800/50 aspect-video flex items-center justify-center relative">
+                  {selectedCourse.thumbnail ? (
+                    <img src={selectedCourse.thumbnail} alt={selectedCourse.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-slate-600">
+                      <span className="text-4xl">🎬</span>
+                      <span className="text-xs">Chưa có ảnh bìa</span>
                     </div>
-                  ))}
-                  {(!selectedCourse.chapters || selectedCourse.chapters.length === 0) && (
-                    <div className="bg-slate-800/20 border border-dashed border-slate-800 rounded-xl p-8 text-center text-slate-500">
-                      Hiện chưa có nội dung chương học nào được cập nhật
+                  )}
+                  {selectedCourse.promoVideoUrl && (
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      Video giới thiệu (Promo)
                     </div>
                   )}
                 </div>
-              </section>
 
-              {selectedCourse.reviewStatus === 'rejected' && selectedCourse.rejectionReason && (
-                <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5">
-                   <div className="flex items-center gap-2 mb-3 text-red-500">
-                    <span className="text-lg">⚠️</span>
-                    <h3 className="font-bold uppercase text-xs tracking-wider">Lý Do Từ Chối</h3>
-                   </div>
-                  <p className="text-red-200 text-sm">{selectedCourse.rejectionReason}</p>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-300 mb-2">Mô tả khoá học</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed whitespace-pre-wrap">
+                    {selectedCourse.description || selectedCourse.shortDescription || 'Không có mô tả'}
+                  </p>
                 </div>
-              )}
 
-              {selectedCourse.reviewStatus === 'pending' && (
-                <div className="space-y-3 pt-6 border-t border-slate-800">
-                   <div className="flex items-center gap-2 text-amber-500 mb-1">
-                    <h3 className="font-bold uppercase text-xs tracking-wider">Ý kiến phản hồi (Nếu từ chối)</h3>
-                   </div>
-                  <textarea
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Vui lòng cung cấp lý do cụ thể nếu từ chối duyệt khoá học..."
-                    className="w-full px-5 py-4 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                    rows="4"
-                  />
-                  <p className="text-slate-500 text-xs">Phản hồi này sẽ được gửi trực tiếp đến giảng viên thông qua hệ thống.</p>
+                {selectedCourse.reviewStatus === 'rejected' && selectedCourse.rejectionReason && (
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-red-400 uppercase mb-1">Lý do từ chối</p>
+                    <p className="text-red-300 text-sm">{selectedCourse.rejectionReason}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Price + Stats + Actions + Curriculum */}
+              <div className="p-6 space-y-5">
+
+                {/* Price */}
+                <p className="text-3xl font-extrabold text-blue-400">
+                  {selectedCourse.isFree ? 'Miễn phí' : `${Number(selectedCourse.price || 0).toLocaleString('vi-VN')}đ`}
+                </p>
+
+                {/* Stats */}
+                <div className="space-y-2 border-t border-slate-800 pt-4">
+                  <div className="flex items-center justify-between text-sm py-1">
+                    <span className="text-slate-400">📚 Tổng số bài học</span>
+                    <span className="text-white font-semibold">{totalLessons(selectedCourse)} bài</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm py-1">
+                    <span className="text-slate-400">📶 Trình độ</span>
+                    <span className="text-white font-semibold">{levelLabel(selectedCourse.level)}</span>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 px-8 py-5 flex justify-end gap-4 z-10">
-              {selectedCourse.reviewStatus === 'pending' ? (
-                <>
+                {/* Actions (pending only) */}
+                {selectedCourse.reviewStatus === 'pending' && (
+                  <div className="space-y-3 border-t border-slate-800 pt-4">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleApproveCourse(selectedCourse._id)}
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                      >
+                        ✅ Phê duyệt
+                      </button>
+                      <button
+                        onClick={() => handleRejectCourse(selectedCourse._id)}
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 text-red-400 hover:text-red-300 font-semibold border border-red-500/40 hover:bg-red-500/10 rounded-xl transition disabled:opacity-50"
+                      >
+                        ✕ Từ chối
+                      </button>
+                    </div>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Lý do từ chối (bắt buộc khi từ chối)..."
+                      className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-red-500/50 transition-colors resize-none text-sm"
+                      rows="3"
+                    />
+                  </div>
+                )}
+
+                {/* Curriculum */}
+                <div className="border-t border-slate-800 pt-4">
+                  <h3 className="text-base font-bold text-white mb-4">📖 Nội dung chương trình</h3>
+                  {selectedCourse.chapters?.length > 0 ? (
+                    <div className="space-y-5 max-h-[400px] overflow-y-auto pr-1">
+                      {selectedCourse.chapters.map((ch, idx) => (
+                        <div key={ch._id}>
+                          <p className="text-sm font-bold text-slate-300 mb-2 px-1">
+                            Chương {idx + 1}: {ch.title}
+                          </p>
+                          <div className="space-y-2">
+                            {ch.lessons?.map((lesson) => (
+                              <div key={lesson._id}>
+                                <button
+                                  onClick={() => handleExpandLesson(lesson)}
+                                  disabled={loadingLesson}
+                                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600 transition text-left group"
+                                >
+                                  <span className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm flex-shrink-0 ${
+                                    lesson.type === 'video' ? 'bg-blue-500/15 text-blue-400' :
+                                    lesson.type === 'quiz'  ? 'bg-purple-500/15 text-purple-400' :
+                                                              'bg-slate-700 text-slate-400'
+                                  }`}>
+                                    {lesson.type === 'video' ? '▶' : lesson.type === 'quiz' ? '?' : '📄'}
+                                  </span>
+                                  <span className="text-sm font-medium text-slate-200 group-hover:text-white transition flex-1">
+                                    {lesson.title}
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    {expandedLessonId === lesson._id ? '▲' : '▼'}
+                                  </span>
+                                </button>
+
+                                {expandedLessonId === lesson._id && (
+                                  <div className="ml-12 mt-2 mb-2 p-3 bg-slate-800/50 border border-slate-700 rounded-lg space-y-2">
+                                    {loadingLesson ? (
+                                      <p className="text-slate-400 text-xs">Đang tải...</p>
+                                    ) : lessonDetail ? (
+                                      <>
+                                        {lessonDetail.type === 'video' && lessonDetail.video_url && (
+                                          <div className="aspect-video bg-slate-950 rounded overflow-hidden">
+                                            {lessonDetail.video_url.includes('youtube') || lessonDetail.video_url.includes('youtu.be') ? (
+                                              <iframe width="100%" height="100%" src={lessonDetail.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title={lessonDetail.title} frameBorder="0" allowFullScreen className="w-full h-full" />
+                                            ) : (
+                                              <video src={lessonDetail.video_url} controls className="w-full h-full" />
+                                            )}
+                                          </div>
+                                        )}
+                                        {lessonDetail.type === 'text' && lessonDetail.text_content && (
+                                          <div className="text-slate-300 text-xs max-h-40 overflow-y-auto whitespace-pre-wrap leading-relaxed">{lessonDetail.text_content}</div>
+                                        )}
+                                        {lessonDetail.type === 'quiz' && lessonDetail.questions?.length > 0 && (
+                                          <div className="space-y-2">
+                                            {lessonDetail.questions.map((q, qi) => (
+                                              <div key={qi} className="text-xs">
+                                                <p className="text-slate-200 font-medium mb-1">Q{qi + 1}: {q.question}</p>
+                                                {q.options.map((opt, oi) => (
+                                                  <p key={oi} className={`ml-2 ${oi === q.correctIndex ? 'text-emerald-400 font-semibold' : 'text-slate-500'}`}>
+                                                    {oi === q.correctIndex ? '✓' : '○'} {opt}
+                                                  </p>
+                                                ))}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {!lessonDetail.video_url && !lessonDetail.text_content && !(lessonDetail.questions?.length > 0) && (
+                                          <p className="text-slate-500 text-xs italic">Chưa có nội dung</p>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <p className="text-slate-500 text-xs">Không tải được nội dung</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-xs italic">Chưa có nội dung</p>
+                  )}
+                </div>
+
+                {/* Close (non-pending) */}
+                {selectedCourse.reviewStatus !== 'pending' && (
                   <button
                     onClick={closeModal}
-                    disabled={actionLoading}
-                    className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition disabled:opacity-50"
+                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition text-sm"
                   >
                     Đóng
                   </button>
-                  <button
-                    onClick={() => handleRejectCourse(selectedCourse._id)}
-                    disabled={actionLoading}
-                    className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 rounded-xl font-medium transition-all disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Đang xử lý...' : 'Từ Chối'}
-                  </button>
-                  <button
-                    onClick={() => handleApproveCourse(selectedCourse._id)}
-                    disabled={actionLoading}
-                    className="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition shadow-lg shadow-blue-500/20 disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Đang xử lý...' : 'Duyệt Khoá Học'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={closeModal}
-                  className="px-10 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition"
-                >
-                  Đóng cửa sổ
-                </button>
-              )}
+                )}
+
+              </div>
             </div>
+
           </div>
         </div>
       )}
