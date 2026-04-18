@@ -38,6 +38,7 @@ import ManageCategories from '../pages/Admin/ManageCategories';
 import AdminCourseReview from '../pages/Admin/AdminCourseReview';
 import AdminCourseUpdateReview from '../pages/Admin/AdminCourseUpdateReview';
 import AdminPayouts from '../pages/Admin/AdminPayouts';
+import AdminReports from '../pages/Admin/AdminReports';
 
 // ---- ICONS ----
 const I = {
@@ -123,6 +124,7 @@ export default function AppRouter() {
         { path: '/admin/course-updates', label: 'Duyệt cập nhật', icon: <span>🔄</span> },
         { path: '/admin/categories', label: 'Danh mục', icon: <I.Categories /> },
         { path: '/admin/payouts', label: 'Chi trả GV', icon: <I.Payment /> },
+        { path: '/admin/reports', label: 'Báo cáo & Export', icon: <span>📊</span> },
       ]} /></ProtectedRoute>}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<ManageUsers />} />
@@ -131,6 +133,7 @@ export default function AppRouter() {
         <Route path="/admin/course-updates" element={<AdminCourseUpdateReview />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
         <Route path="/admin/payouts" element={<AdminPayouts />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
       </Route>
 
       {/* FALLBACK */}

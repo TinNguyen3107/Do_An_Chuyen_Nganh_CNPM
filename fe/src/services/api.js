@@ -210,4 +210,25 @@ export const payoutAPI = {
   reject: (id, reason) => api.patch(`/payouts/${id}/reject`, { reason }),
 };
 
+// ─────────────────────────────────────────────────────────────────
+// REPORTS (Admin Reporting & Export)
+// ─────────────────────────────────────────────────────────────────
+export const reportAPI = {
+  // ── Data (JSON) ──────────────────────────────────────────────
+  getRevenue:     (params = {}) => api.get('/reports/revenue',     { params }),
+  getUsers:       (params = {}) => api.get('/reports/users',       { params }),
+  getCourses:     (params = {}) => api.get('/reports/courses',     { params }),
+  getInstructors: (params = {}) => api.get('/reports/instructors', { params }),
+
+  // ── Export (blob) ────────────────────────────────────────────
+  exportRevenue: (params = {}) =>
+    api.get('/reports/revenue/export',     { params, responseType: 'blob' }),
+  exportUsers: (params = {}) =>
+    api.get('/reports/users/export',       { params, responseType: 'blob' }),
+  exportCourses: (params = {}) =>
+    api.get('/reports/courses/export',     { params, responseType: 'blob' }),
+  exportInstructors: (params = {}) =>
+    api.get('/reports/instructors/export', { params, responseType: 'blob' }),
+};
+
 export default api;
