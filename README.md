@@ -1,102 +1,255 @@
+# 26Tech LMS — Hệ thống Quản lý Khoá học Trực tuyến
 
-TÊN ĐỀ TÀI: XÂY DỰNG HỆ THỐNG QUẢN LÝ KHOÁ HỌC TRỰC TUYẾN 26Tech
+> **Đồ án Chuyên ngành — Công nghệ Phần mềm**  
+> Sinh viên thực hiện: Nguyễn Thanh Linh  
+> Nền tảng: Web Application (ReactJS + Node.js + MongoDB)
 
-1. Giới thiệu chung
-Trong những năm gần đây, giáo dục trực tuyến đang phát triển mạnh mẽ và trở thành xu hướng phổ biến trong đào tạo hiện đại. Nhu cầu học tập mọi lúc, mọi nơi của học viên ngày càng tăng, kéo theo yêu cầu về một hệ thống quản lý khóa học trực tuyến linh hoạt, dễ sử dụng và đảm bảo an toàn dữ liệu.
-Dự án này hướng tới xây dựng một nền tảng LMS cơ bản, cho phép giảng viên tạo và quản lý nội dung khóa học, đồng thời hỗ trợ học viên đăng ký, thanh toán và học tập trực tuyến với khả năng theo dõi tiến độ hiệu quả.
+---
 
-Dự án này hướng tới xây dựng một nền tảng LMS cơ bản, cho phép giảng viên tạo và quản lý nội dung khóa học, đồng thời hỗ trợ học viên đăng ký, thanh toán và học tập trực tuyến với khả năng theo dõi tiến độ hiệu quả.
+## 📖 Giới thiệu
 
-2. Mục tiêu dự án
+**26Tech LMS** là một hệ thống quản lý học tập trực tuyến (Learning Management System) cho phép:
 
-Mục tiêu chính của đề tài là xây dựng một hệ thống học tập trực tuyến đáp ứng các chức năng cốt lõi của một LMS, bao gồm:
+- 🎓 **Học viên** tìm kiếm, đăng ký và học tập các khoá học trực tuyến
+- 🏫 **Giảng viên** tạo, quản lý nội dung khoá học và theo dõi doanh thu
+- 👑 **Quản trị viên** điều hành toàn bộ nền tảng, duyệt khoá học và xuất báo cáo
 
-Cho phép giảng viên tạo và quản lý khóa học, bài giảng và nội dung đào tạo.
+---
 
-Hỗ trợ học viên tìm kiếm, đăng ký và học tập trực tuyến thông qua nền tảng web.
+## ✨ Tính năng chính
 
-Quản lý quá trình ghi danh, thanh toán và cấp quyền truy cập khóa học tự động.
+### 🎓 Học viên (Student)
+| Tính năng | Mô tả |
+|---|---|
+| Đăng ký / Đăng nhập | Xác thực JWT, reset mật khẩu qua email |
+| Tìm kiếm khoá học | Lọc theo danh mục, cấp độ, từ khoá |
+| Thanh toán trực tuyến | Hỗ trợ MoMo, ATM, chuyển khoản ngân hàng |
+| Học tập | Xem bài giảng video, đánh dấu hoàn thành từng bài |
+| Theo dõi tiến độ | % hoàn thành khoá học cập nhật theo thời gian thực |
+| Đánh giá & nhận xét | Rating 5 sao và viết review sau khi học |
+| Lịch sử thanh toán | Xem lại toàn bộ giao dịch đã thực hiện |
 
-Cung cấp chức năng theo dõi tiến độ học tập, đánh giá và phản hồi khóa học.
+### 🏫 Giảng viên (Instructor)
+| Tính năng | Mô tả |
+|---|---|
+| Tạo & quản lý khoá học | CRUD khoá học, chương (chapter), bài giảng (lesson) |
+| Gửi duyệt khoá học | Admin duyệt trước khi xuất bản |
+| Ví giảng viên | Theo dõi hoa hồng (70%), số dư, lịch sử thu nhập |
+| Rút tiền | Yêu cầu rút tiền về tài khoản ngân hàng |
 
-Xây dựng giao diện thân thiện, dễ sử dụng và phù hợp với người dùng trên nhiều thiết bị.
+### 👑 Quản trị viên (Admin)
+| Tính năng | Mô tả |
+|---|---|
+| Dashboard tổng quan | Thống kê doanh thu, người dùng, khoá học |
+| Quản lý người dùng | Xem, phân quyền, khoá/mở tài khoản |
+| Duyệt giảng viên | Xét duyệt hồ sơ đăng ký giảng viên |
+| Duyệt khoá học | Approve/Reject khoá học mới và cập nhật |
+| Quản lý danh mục | CRUD danh mục khoá học |
+| Chi trả giảng viên | Duyệt yêu cầu rút tiền |
+| **Báo cáo & Export** ✨ | Xuất báo cáo doanh thu, người dùng, khoá học, giảng viên ra CSV/Excel |
 
-3. Phạm vi và chức năng hệ thống
+---
 
-Hệ thống LMS được thiết kế gồm 3 nhóm người dùng chính: Student (Học viên), Instructor (Giảng viên), Admin (Quản trị viên).
+## 🛠️ Công nghệ sử dụng
 
-🔹 Phân hệ Học viên (Student)
+| Layer | Công nghệ |
+|---|---|
+| **Frontend** | ReactJS 18, Vite, Tailwind CSS |
+| **Backend** | Node.js, Express.js 5, ES Modules |
+| **Database** | MongoDB Atlas, Mongoose ODM |
+| **Auth** | JWT (httpOnly cookie + Authorization header) |
+| **Payment** | MoMo API, Mock ATM/Bank |
+| **Upload** | Multer (local storage `/uploads/`) |
+| **Email** | Nodemailer (reset password) |
+| **Export** | ExcelJS (`.xlsx`), csv-stringify (`.csv`) |
+| **Validation** | Joi |
+| **Testing** | Jest, Supertest |
 
-Học viên có thể sử dụng hệ thống để học tập và quản lý khóa học cá nhân, bao gồm:
+---
 
-Đăng ký và đăng nhập tài khoản an toàn.
+## 🏗️ Kiến trúc hệ thống
 
-Tìm kiếm và xem danh sách các khóa học đã được xuất bản.
+```
+Client (React + Vite)
+        │  HTTP/HTTPS
+        ▼
+┌─────────────────────────────────┐
+│         Express.js Server       │
+│                                 │
+│  Routes → Validators            │
+│       → Middlewares (Auth/Role) │
+│       → Controllers             │
+│       → Services (Logic)        │
+│       → Repositories (Queries)  │
+│       → Models (Mongoose)       │
+└──────────────┬──────────────────┘
+               │ Mongoose
+               ▼
+         MongoDB Atlas
+```
 
-Xem chi tiết khóa học (chương, bài giảng, mô tả, giá).
+---
 
-Ghi danh khóa học miễn phí hoặc thanh toán trực tuyến đối với khóa học trả phí.
+## 📁 Cấu trúc thư mục
 
-Truy cập bài giảng sau khi ghi danh thành công.
+```
+Do_An_Chuyen_Nganh_CNPM/
+├── backend/                   ← Node.js + Express API
+│   ├── server.js              ← Entry point
+│   ├── config/
+│   │   └── db.js              ← Kết nối MongoDB
+│   ├── models/                ← Mongoose schemas
+│   │   ├── User.js
+│   │   ├── Course.js
+│   │   ├── Chapter.js
+│   │   ├── Lesson.js
+│   │   ├── Enrollment.js
+│   │   ├── LessonProgress.js
+│   │   ├── Payment.js
+│   │   ├── Payout.js
+│   │   ├── InstructorProfile.js
+│   │   ├── InstructorWallet.js
+│   │   ├── Category.js
+│   │   └── Review.js
+│   ├── controllers/           ← HTTP handlers
+│   ├── services/              ← Business logic
+│   ├── repositories/          ← Database queries
+│   ├── routes/                ← URL routing
+│   ├── middlewares/           ← Auth, Role, Upload, Error
+│   ├── validators/            ← Joi input validation
+│   ├── utils/                 ← Helpers (token, export, initAdmin)
+│   └── tests/                 ← Jest unit tests
+│
+└── fe/                        ← React + Vite frontend
+    └── src/
+        ├── pages/
+        │   ├── Admin/         ← Dashboard, Users, Reports...
+        │   ├── Instructor/    ← Dashboard, CreateCourse, Wallet...
+        │   ├── Student/       ← Dashboard, MyCourses, Learning...
+        │   └── Public/        ← HomePage, CourseList, CourseDetail
+        ├── components/        ← Shared UI components
+        ├── layouts/           ← DashboardLayout, MainLayout
+        ├── services/          ← Axios API service
+        ├── context/           ← AuthContext
+        └── router/            ← React Router config
+```
 
-Đánh dấu hoàn thành bài học và theo dõi tiến độ học tập (%).
+---
 
-Đánh giá và nhận xét khóa học sau khi hoàn thành phần lớn nội dung.
+## 🚀 Hướng dẫn chạy dự án
 
-Quản lý các khóa học đã đăng ký trong mục “My Courses”.
+### Yêu cầu
+- Node.js >= 18
+- MongoDB Atlas account (hoặc local MongoDB)
 
-🔹 Phân hệ Giảng viên (Instructor)
+### 1. Clone repository
+```bash
+git clone https://github.com/TinNguyen3107/Do_An_Chuyen_Nganh_CNPM.git
+cd Do_An_Chuyen_Nganh_CNPM
+```
 
-Giảng viên có vai trò xây dựng nội dung và quản lý khóa học của mình:
+### 2. Cài đặt dependencies
+```bash
+# Backend
+cd backend
+npm install
 
-Tạo khóa học mới ở trạng thái Draft để chỉnh sửa trước khi xuất bản.
+# Frontend
+cd ../fe
+npm install
+```
 
-Quản lý nội dung khóa học: chương, bài giảng video (CRUD).
+### 3. Cấu hình môi trường
 
-Gửi khóa học để Admin duyệt trước khi xuất bản.
+Tạo file `backend/.env`:
+```env
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/<dbname>
+JWT_SECRET=your_jwt_secret_here
+CLIENT_URL=http://localhost:5173
 
-Theo dõi số lượng học viên ghi danh và doanh thu từ khóa học.
+# Admin mặc định
+ADMIN_EMAIL=admin@26tech.vn
+ADMIN_PASSWORD=Admin@123456
+ADMIN_NAME=Admin 26Tech
 
-Xem thống kê khóa học qua Instructor Dashboard.
+# Email (reset password)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+```
 
-🔹 Phân hệ Quản trị viên (Admin)
+### 4. Chạy development server
+```bash
+# Backend (port 5000)
+cd backend
+npm run dev
 
-Admin có quyền quản lý toàn bộ hệ thống:
+# Frontend (port 5173)
+cd fe
+npm run dev
+```
 
-Quản lý người dùng và phân quyền (Admin / Instructor / Student).
+Truy cập: **http://localhost:5173**
 
-Quản lý danh mục khóa học.
+---
 
-Duyệt hoặc từ chối các khóa học được gửi lên từ giảng viên.
+## 🔌 API Endpoints chính
 
-Xem thống kê tổng quan hệ thống: doanh thu, số lượng khóa học, số lượng người dùng.
+| Method | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| POST | `/api/auth/register` | Public | Đăng ký tài khoản |
+| POST | `/api/auth/login` | Public | Đăng nhập |
+| GET | `/api/courses` | Public | Danh sách khoá học |
+| POST | `/api/payments/momo` | Student | Thanh toán MoMo |
+| GET | `/api/stats/overview` | Admin | Thống kê tổng quan |
+| GET | `/api/reports/revenue` | Admin | Báo cáo doanh thu |
+| GET | `/api/reports/revenue/export` | Admin | Export Excel/CSV |
+| GET | `/api/reports/users` | Admin | Báo cáo người dùng |
+| GET | `/api/reports/courses` | Admin | Báo cáo khoá học |
+| GET | `/api/reports/instructors` | Admin | Báo cáo giảng viên |
 
-Xuất báo cáo doanh thu và số lượng học viên theo từng khóa học (Export CSV/PDF).
+---
 
-4. Yêu cầu phi chức năng
+## 🧪 Chạy Unit Tests
 
-Hệ thống cần đảm bảo các yêu cầu phi chức năng quan trọng như:
+```bash
+cd backend
+npm test
+```
 
-Giao diện hiện đại, trực quan, thân thiện với người dùng.
+Tests được viết bằng **Jest + Supertest**, bao phủ các service: `authService`, `categoryService`, `courseService`, `enrollmentService`, `instructorService`, `userService`.
 
-Hỗ trợ responsive trên nhiều thiết bị.
+---
 
-Bảo mật thông tin với cơ chế xác thực và phân quyền rõ ràng.
+## 📊 Luồng hoạt động chính
 
-Đảm bảo dữ liệu khóa học, thanh toán và tiến độ học tập được lưu trữ an toàn.
+```
+Học viên đăng ký khoá học trả phí:
+  [Chọn khoá học] → [Checkout] → [Chọn phương thức thanh toán]
+       → [Thanh toán MoMo/ATM/Bank] → [Webhook callback]
+       → [Tạo Enrollment] → [Cộng commission vào ví GV]
+       → [Học viên có quyền truy cập khoá học]
 
-5. Công nghệ sử dụng
+Giảng viên tạo khoá học:
+  [Tạo khoá học (Draft)] → [Thêm chương + bài giảng]
+       → [Gửi duyệt Admin] → [Admin Approve]
+       → [Publish khoá học] → [Học viên thấy trên trang chủ]
+```
 
-Dự án dự kiến triển khai theo mô hình Web Application với các công nghệ:
+---
 
-Frontend: ReactJS (Vite), Tailwind CSS
+## 🌿 Git Branches
 
-Backend: Node.js, ExpressJS
+| Branch | Mô tả |
+|---|---|
+| `main` | Production-ready code |
+| `feature/admin-reporting-export` | Tính năng Báo cáo & Export cho Admin |
 
-Database: MongoDB
+---
 
+## 📝 License
 
-6. Kết luận sơ bộ
-
-Đề tài giúp sinh viên rèn luyện kỹ năng làm việc nhóm, phân tích yêu cầu, thiết kế hệ thống và triển khai một ứng dụng web hoàn chỉnh theo quy trình kỹ nghệ phần mềm. Sản phẩm có thể được sử dụng như một mô hình tham khảo cho các hệ thống học tập trực tuyến quy mô nhỏ trong môi trường học tập .
-
+Dự án được thực hiện cho mục đích học thuật trong khuôn khổ đồ án chuyên ngành.
