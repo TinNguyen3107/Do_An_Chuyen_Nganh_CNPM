@@ -25,6 +25,7 @@ import learningRoutes from './routes/learningRoutes.js';
 import courseReviewRoutes from './routes/courseReviewRoutes.js';
 import lessonRoutes, { lessonStandaloneRouter } from './routes/lessonRoutes.js';
 import chapterRoutes, { chapterStandaloneRouter, chapterLessonRouter } from './routes/chapterRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 
 dotenv.config();
@@ -65,6 +66,7 @@ app.use('/api/learning', learningRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin-review', courseReviewRoutes);
+app.use('/api/reports', reportRoutes);                       // Admin Reporting & Export
 app.use('/api/courses/:courseId/chapters', chapterRoutes);   // GET/POST chapters
 app.use('/api/courses/:courseId/lessons',  lessonRoutes);    // GET lessons by course
 app.use('/api/chapters', chapterStandaloneRouter);           // GET/PUT/DELETE /chapters/:id
