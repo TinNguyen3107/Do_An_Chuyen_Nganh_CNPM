@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import {
+  PlayCircle, CheckCircle, Circle, ChevronLeft,
+  Menu, X, ChevronDown, ChevronUp, Award,
+  HelpCircle, FileText, Clock, Lock
+} from 'lucide-react';
 
 // ── YouTube IFrame API: load once ─────────────────────────────────────────────
 const _ytReady = (() => {
@@ -31,8 +36,8 @@ const fmt = (s) => {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 };
 
-// ── LMS Custom YouTube Player — hoàn toàn ẩn YouTube branding ────────────────
-function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) {
+// ── LMS Custom YouTube Player ────────────────────────────────────────────────
+function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false, onDurationLoad }) {
   const playerDivRef = useRef(null);
   const playerRef    = useRef(null);
   const wrapperRef   = useRef(null);
@@ -40,8 +45,8 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
   const hideTimer    = useRef(null);
   const tickTimer    = useRef(null);
   const reportedRef      = useRef(false);
-  const watchedSecsRef   = useRef(0);     // tích lũy giây xem THỰC TẾ khi đang play
-  const maxReachedRef    = useRef(0);     // giây xa nhất đã xem thực tế → giới hạn seek
+  const watchedSecsRef   = useRef(0);
+  const maxReachedRef    = useRef(0);
   const seekWarnTimerRef = useRef(null);
   const idRef            = useRef(`yt-${Math.random().toString(36).slice(2, 8)}`);
 
@@ -56,7 +61,7 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
   const [speed,        setSpeed]        = useState(1);
   const [showSpeed,    setShowSpeed]    = useState(false);
   const [isFs,          setIsFs]          = useState(false);
-  const [showSeekWarn,  setShowSeekWarn]  = useState(false); // cảnh báo tua quá 5s
+  const [showSeekWarn,  setShowSeekWarn]  = useState(false);
 
   useEffect(() => {
     let destroyed = false;
@@ -67,7 +72,7 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
         videoId,
         playerVars: { controls: 0, rel: 0, modestbranding: 1, iv_load_policy: 3, disablekb: 1, playsinline: 1, enablejsapi: 1, origin: window.location.origin },
         events: {
-          onReady: (e) => { if (destroyed) return; e.target.setVolume(80); setDuration(e.target.getDuration()); setReady(true); },
+          onReady: (e) => { if (destroyed) return; e.target.setVolume(80); const dur = e.target.getDuration(); setDuration(dur); setReady(true); onDurationLoad?.(dur); },
           onStateChange: (e) => {
             if (destroyed) return;
             const S = window.YT.PlayerState;
@@ -80,8 +85,8 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
     });
     return () => {
       destroyed = true;
-      watchedSecsRef.current = 0;   // reset khi chuyển video
-      maxReachedRef.current  = 0;   // reset giới hạn seek
+      watchedSecsRef.current = 0;
+      maxReachedRef.current  = 0;
       reportedRef.current    = false;
       clearInterval(tickTimer.current);
       clearTimeout(hideTimer.current);
@@ -90,7 +95,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
     };
   }, [videoId]);
 
-  // Progress tick + tracking 50% real watch time
   useEffect(() => {
     if (playing) {
       tickTimer.current = setInterval(() => {
@@ -99,9 +103,7 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
         const ct = p.getCurrentTime();
         setCurrentTime(ct);
         if (!duration) setDuration(p.getDuration());
-        // Tích lũy thời gian xem thực tế — 0.3s/tick khi đang play
         watchedSecsRef.current += 0.3;
-        // Cập nhật điểm xa nhất đã xem (dùng để giới hạn seek)
         if (ct > maxReachedRef.current) maxReachedRef.current = ct;
         const dur = p.getDuration() || 0;
         if (dur > 0 && watchedSecsRef.current / dur >= 0.5 && !reportedRef.current) {
@@ -121,6 +123,69 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
     return () => document.removeEventListener('fullscreenchange', h);
   }, []);
 
+  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!ready) return;
+    const onKey = (e) => {
+      // Don't fire when typing in input/textarea
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return;
+
+      const p = playerRef.current;
+      if (!p) return;
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        playing ? p.pauseVideo() : p.playVideo();
+        setShowControls(true);
+        clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => setShowControls(false), 2000);
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const ct = p.getCurrentTime?.() || 0;
+        const dur = p.getDuration?.() || 0;
+        const isDone = alreadyCompleted || reportedRef.current;
+        const maxAllowed = maxReachedRef.current + 5;
+        const target = Math.min(ct + 5, dur);
+        if (!isDone && target > maxAllowed) {
+          setShowSeekWarn(true);
+          clearTimeout(seekWarnTimerRef.current);
+          seekWarnTimerRef.current = setTimeout(() => setShowSeekWarn(false), 2500);
+        } else {
+          p.seekTo(target, true);
+          setCurrentTime(target);
+        }
+        setShowControls(true);
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const ct = p.getCurrentTime?.() || 0;
+        const target = Math.max(0, ct - 5);
+        p.seekTo(target, true);
+        setCurrentTime(target);
+        setShowControls(true);
+      }
+
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        if (muted) { p.unMute(); p.setVolume(volume || 80); setMuted(false); }
+        else { p.mute(); setMuted(true); }
+      }
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        const el = wrapperRef.current;
+        if (!document.fullscreenElement) el?.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [ready, playing, muted, volume, alreadyCompleted]);
+
   const resetHide = useCallback(() => {
     setShowControls(true);
     clearTimeout(hideTimer.current);
@@ -133,8 +198,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
     const rect       = progressRef.current.getBoundingClientRect();
     const ratio      = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const targetTime = ratio * duration;
-
-    // Nếu đã hoàn thành video → cho phép tua tự do
     const isDone = alreadyCompleted || reportedRef.current;
     if (!isDone) {
       const maxAllowed = maxReachedRef.current + 5;
@@ -148,7 +211,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
         return;
       }
     }
-
     playerRef.current?.seekTo(targetTime, true);
     setCurrentTime(targetTime);
   };
@@ -161,14 +223,13 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
 
   return (
     <div ref={wrapperRef}
-      className="relative bg-black rounded-xl overflow-hidden select-none"
+      className="relative bg-black select-none w-full"
       style={{ aspectRatio: '16/9', cursor: showControls ? 'default' : 'none' }}
       onMouseMove={resetHide}
       onMouseLeave={() => playing && setShowControls(false)}
     >
       <div ref={playerDivRef} id={idRef.current} className="w-full h-full" />
 
-      {/* Cảnh báo tua quá 5s */}
       {showSeekWarn && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-orange-500/90 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl pointer-events-none">
           <span>⚠️</span>
@@ -176,7 +237,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
         </div>
       )}
 
-      {/* Loading */}
       {!ready && (
         <div className="absolute inset-0 bg-black flex flex-col items-center justify-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
@@ -184,30 +244,25 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
         </div>
       )}
 
-      {/* Buffering */}
       {buffering && ready && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white animate-spin" />
         </div>
       )}
 
-      {/* Click to play/pause */}
-      {ready && <div className="absolute inset-0" style={{ cursor: 'pointer' }} onClick={togglePlay} />}
+      {ready && <div className="absolute inset-0" style={{ cursor: 'default' }} onClick={togglePlay} />}
 
-      {/* Center play icon */}
       {ready && !playing && !buffering && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20">
+          <div className="w-16 h-16 rounded-full bg-blue-600/80 backdrop-blur-sm flex items-center justify-center border border-blue-400/30 shadow-lg shadow-blue-500/30 hover:scale-110 transition-transform">
             <svg className="w-7 h-7 text-white ml-1" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
           </div>
         </div>
       )}
 
-      {/* Controls bar */}
       <div className="absolute inset-x-0 bottom-0 transition-all duration-200"
         style={{ opacity: showControls ? 1 : 0, transform: showControls ? 'translateY(0)' : 'translateY(4px)', pointerEvents: showControls ? 'auto' : 'none', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', paddingTop: 40 }}
       >
-        {/* Progress bar */}
         <div className="px-3 mb-2 group/bar">
           <div ref={progressRef} onClick={seek} className="w-full h-1 bg-white/20 rounded-full cursor-pointer relative" style={{ height: 4 }}>
             <div className="h-full bg-blue-500 rounded-full relative" style={{ width: `${pct}%`, transition: 'width 0.3s linear' }}>
@@ -216,9 +271,7 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
           </div>
         </div>
 
-        {/* Controls row */}
         <div className="flex items-center gap-1 px-3 pb-2.5">
-          {/* Play/Pause */}
           <button onClick={togglePlay} className="text-white hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-white/10">
             {playing
               ? <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -226,7 +279,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
             }
           </button>
 
-          {/* Volume */}
           <div className="flex items-center gap-1 group/vol">
             <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-white/10">
               {muted || volume === 0
@@ -241,11 +293,9 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
             />
           </div>
 
-          {/* Time */}
           <span className="text-white/70 text-xs font-mono ml-1 shrink-0">{fmt(currentTime)} / {fmt(duration)}</span>
           <span className="flex-1" />
 
-          {/* Speed */}
           <div className="relative z-10">
             <button onClick={() => setShowSpeed(s => !s)} className="text-white/80 hover:text-white text-xs font-semibold px-2 py-1 rounded border border-white/20 hover:border-white/50 transition-colors">
               {speed}×
@@ -265,7 +315,6 @@ function LMSVideoPlayer({ videoId, onWatchComplete, alreadyCompleted = false }) 
             )}
           </div>
 
-          {/* Fullscreen */}
           <button onClick={toggleFs} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10">
             {isFs
               ? <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 3 3 3 3 8"/><polyline points="21 3 16 3 16 8"/><polyline points="3 16 3 21 8 21"/><polyline points="16 21 21 21 21 16"/></svg>
@@ -283,7 +332,7 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
   const [answers, setAnswers]     = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore]         = useState(0);
-  const [retrying, setRetrying]   = useState(false); // override alreadyDone
+  const [retrying, setRetrying]   = useState(false);
 
   const questions = lesson.questions || [];
 
@@ -316,16 +365,18 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
     setAnswers({});
     setSubmitted(false);
     setScore(0);
-    setRetrying(true); // bật cờ → hiển thị quiz dù alreadyDone = true
+    setRetrying(true);
   };
 
   const allAnswered = questions.every((_, i) => answers[i] !== undefined);
 
-  // Hiện màn "Đã hoàn thành" chỉ khi done & KHÔNG đang retry
   if (alreadyDone && !submitted && !retrying) {
     return (
-      <div className="mb-5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 text-center">
-        <p className="text-emerald-400 font-semibold text-lg">✅ Bạn đã hoàn thành bài quiz này!</p>
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
+        <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Award className="w-7 h-7 text-emerald-400" />
+        </div>
+        <p className="text-emerald-400 font-semibold text-lg">Bạn đã hoàn thành bài quiz này!</p>
         <button onClick={handleRetry} className="mt-3 text-xs text-slate-400 hover:text-white underline">
           Làm lại quiz
         </button>
@@ -333,10 +384,11 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
     );
   }
 
-
   return (
-    <div className="mb-5 space-y-5">
-      <h3 className="font-semibold text-lg">📝 Bài kiểm tra</h3>
+    <div className="space-y-5">
+      <h3 className="font-semibold text-lg flex items-center gap-2">
+        <HelpCircle className="w-5 h-5 text-purple-400" /> Bài kiểm tra
+      </h3>
 
       {questions.map((q, qIdx) => {
         const chosen   = answers[qIdx];
@@ -344,11 +396,11 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
         const isWrong  = submitted && chosen !== undefined && chosen !== q.correctIndex;
 
         return (
-          <div key={qIdx} className={`bg-slate-800 rounded-xl p-4 border transition-colors ${
+          <div key={qIdx} className={`bg-slate-800/80 rounded-xl p-5 border transition-colors ${
             isRight ? 'border-emerald-500/40' : isWrong ? 'border-red-500/40' : 'border-slate-700'
           }`}>
             <p className="font-medium text-sm mb-3 text-slate-200">
-              {qIdx + 1}. {q.question}
+              Câu {qIdx + 1}. {q.question}
             </p>
             <div className="space-y-2">
               {q.options.map((opt, oIdx) => {
@@ -357,27 +409,16 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
 
                 let style = 'border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50';
                 if (submitted) {
-                  if (isChosen && isCorrect) {
-                    // Chọn đúng → xanh
-                    style = 'border-emerald-500 bg-emerald-500/15 text-emerald-300';
-                  } else if (isChosen && !isCorrect) {
-                    // Chọn sai → đỏ (KHÔNG reveal đáp án đúng)
-                    style = 'border-red-500 bg-red-500/15 text-red-300';
-                  } else {
-                    // Không chọn → mờ đi, giữ bí mật đáp án
-                    style = 'border-slate-700 text-slate-600 opacity-60';
-                  }
+                  if (isChosen && isCorrect) style = 'border-emerald-500 bg-emerald-500/15 text-emerald-300';
+                  else if (isChosen && !isCorrect) style = 'border-red-500 bg-red-500/15 text-red-300';
+                  else style = 'border-slate-700 text-slate-600 opacity-60';
                 } else if (isChosen) {
                   style = 'border-blue-500 bg-blue-500/15 text-blue-300';
                 }
 
                 return (
-                  <button
-                    key={oIdx}
-                    onClick={() => handleSelect(qIdx, oIdx)}
-                    disabled={submitted}
-                    className={`w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-all ${style} ${submitted ? 'cursor-default' : 'cursor-pointer'}`}
-                  >
+                  <button key={oIdx} onClick={() => handleSelect(qIdx, oIdx)} disabled={submitted}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-all ${style} ${submitted ? 'cursor-default' : 'cursor-pointer'}`}>
                     <span className="font-semibold mr-2">{String.fromCharCode(65 + oIdx)}.</span>
                     {opt}
                     {submitted && isChosen && isCorrect  && <span className="float-right text-emerald-400">✓</span>}
@@ -390,17 +431,13 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
         );
       })}
 
-      {/* Submit / Result */}
       {!submitted ? (
-        <button
-          onClick={handleSubmit}
-          disabled={!allAnswered}
-          className="w-full py-3 rounded-xl font-semibold text-sm transition-all bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSubmit} disabled={!allAnswered}
+          className="w-full py-3 rounded-xl font-semibold text-sm transition-all bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
           Nộp bài ({Object.keys(answers).length}/{questions.length} câu đã trả lời)
         </button>
       ) : (
-        <div className={`rounded-xl p-4 text-center border ${
+        <div className={`rounded-xl p-5 text-center border ${
           score === questions.length
             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
             : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
@@ -418,8 +455,13 @@ function QuizSection({ lesson, courseId, getAuthConfig, alreadyDone, onComplete 
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN LEARNING PAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
 export default function LearningPage() {
   const { courseId } = useParams();
+  const navigate = useNavigate();
 
   const [lessons, setLessons] = useState([]);
   const [currentLesson, setCurrentLesson] = useState(null);
@@ -430,15 +472,19 @@ export default function LearningPage() {
   const [completedLessonIds, setCompletedLessonIds] = useState([]);
   const [textDoneMap, setTextDoneMap] = useState({});
   const [videoDoneMap, setVideoDoneMap] = useState({});
-  const [showHtmlSeekWarn, setShowHtmlSeekWarn] = useState(false); // cảnh báo tua HTML5
+  const [showHtmlSeekWarn, setShowHtmlSeekWarn] = useState(false);
+  const [realDurationMap, setRealDurationMap] = useState({}); // lessonId -> seconds (real YT duration)
+
+  // Sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedChapters, setExpandedChapters] = useState([]);
 
   const textTimerRef        = useRef(null);
-  const videoReportedRef    = useRef({});     // đã báo cáo video lesson nào rồi
-  const videoWatchedSecsRef = useRef({});     // giây xem thực tế của từng lesson (HTML5)
-  const videoLastTimeRef    = useRef({});     // vị trí cuối để tính delta (HTML5)
-  const videoMaxReachedRef  = useRef({});     // điểm xa nhất đã xem (HTML5) → giới hạn seek
+  const videoReportedRef    = useRef({});
+  const videoWatchedSecsRef = useRef({});
+  const videoLastTimeRef    = useRef({});
+  const videoMaxReachedRef  = useRef({});
   const htmlSeekWarnTimer   = useRef(null);
-  // Refs luôn giữ giá trị mới nhất → tránh stale closure trong callbacks
   const videoDoneMapRef     = useRef({});
   const textDoneMapRef      = useRef({});
 
@@ -447,7 +493,6 @@ export default function LearningPage() {
       localStorage.getItem('token') ||
       localStorage.getItem('userToken') ||
       localStorage.getItem('accessToken');
-
     return {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       withCredentials: true,
@@ -455,52 +500,8 @@ export default function LearningPage() {
   };
 
   const markLessonCompletedLocal = (lessonId) => {
-    // Bug 5: normalize về string để includes() so sánh đúng
     const id = lessonId?.toString();
-    setCompletedLessonIds((prev) =>
-      prev.includes(id) ? prev : [...prev, id]
-    );
-  };
-
-  const fetchLessons = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const res = await axios.get(
-        `http://localhost:5000/api/learning/course/${courseId}`,
-        getAuthConfig()
-      );
-
-      const lessonData = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.data)
-        ? res.data.data
-        : Array.isArray(res.data?.lessons)
-        ? res.data.lessons
-        : [];
-
-      setLessons(lessonData);
-
-      if (lessonData.length > 0) {
-        setCurrentLesson((prev) => {
-          if (!prev) return lessonData[0];
-          const stillExists = lessonData.find((l) => l._id === prev._id);
-          return stillExists || lessonData[0];
-        });
-      } else {
-        setCurrentLesson(null);
-      }
-    } catch (err) {
-      console.error('Fetch lessons error:', err);
-      setError(
-        err.response?.data?.message || 'Không thể tải danh sách bài học'
-      );
-      setLessons([]);
-      setCurrentLesson(null);
-    } finally {
-      setLoading(false);
-    }
+    setCompletedLessonIds((prev) => prev.includes(id) ? prev : [...prev, id]);
   };
 
   const fetchProgress = async (lessonList = []) => {
@@ -509,31 +510,24 @@ export default function LearningPage() {
         `http://localhost:5000/api/progress/course/${courseId}`,
         getAuthConfig()
       );
-
       const items = Array.isArray(res.data?.data) ? res.data.data : [];
-
       const nextTextDoneMap = {};
       const nextVideoDoneMap = {};
       const nextCompletedLessonIds = [];
 
       items.forEach((item) => {
-        // Bug 5: normalize lessonId về string
         const lessonId =
           typeof item.lesson === 'object' && item.lesson !== null
             ? item.lesson._id?.toString()
             : item.lesson?.toString();
-
         if (!lessonId) return;
-
         if (item.isTextCompleted)  nextTextDoneMap[lessonId]  = true;
         if (item.isVideoCompleted) nextVideoDoneMap[lessonId] = true;
         if (item.isCompleted)      nextCompletedLessonIds.push(lessonId);
       });
 
-      // Suy ra completion cục bộ: chỉ áp dụng cho video/text, KHÔNG áp dụng quiz
-      // Bug 1: quiz có videoUrl='' và textContent='' → tránh auto-complete oan
       lessonList.forEach((lesson) => {
-        if (lesson.type === 'quiz') return; // quiz chỉ mark done qua /quiz endpoint
+        if (lesson.type === 'quiz') return;
         const lid = lesson._id?.toString();
         if (!lid) return;
         const textOk  = !lesson.textContent || nextTextDoneMap[lid];
@@ -553,7 +547,6 @@ export default function LearningPage() {
 
   useEffect(() => {
     const initPage = async () => {
-      // Fetch course name
       try {
         const res = await axios.get(
           `http://localhost:5000/api/courses/${courseId}`,
@@ -563,7 +556,6 @@ export default function LearningPage() {
         if (name) setCourseName(name);
       } catch {}
 
-      // Fetch lessons then progress
       let lessonList = [];
       try {
         const res = await axios.get(
@@ -585,13 +577,39 @@ export default function LearningPage() {
 
       await fetchProgress(lessonList);
     };
-
     initPage();
-
     return () => { if (textTimerRef.current) clearTimeout(textTimerRef.current); };
   }, [courseId]);
 
-  // Bug 3: useCallback + đọc từ ref thay vì closure để tránh stale state
+  // ── Group lessons by chapter ─────────────────────────────────────────────────
+  const groupedChapters = (() => {
+    const chapMap = {};
+    const chapOrder = [];
+    lessons.forEach(l => {
+      const chId   = l.chapter?._id || l.chapter || '__ungrouped';
+      const chName = l.chapter?.title || (chId === '__ungrouped' ? 'Bài học' : `Chương`);
+      if (!chapMap[chId]) {
+        chapMap[chId] = { id: chId, title: chName, lessons: [] };
+        chapOrder.push(chId);
+      }
+      chapMap[chId].lessons.push(l);
+    });
+    return chapOrder.map(id => chapMap[id]);
+  })();
+
+  // Expand first chapter by default
+  useEffect(() => {
+    if (groupedChapters.length > 0 && expandedChapters.length === 0) {
+      setExpandedChapters([groupedChapters[0].id]);
+    }
+  }, [groupedChapters.length]);
+
+  const toggleChapter = (chId) => {
+    setExpandedChapters(prev =>
+      prev.includes(chId) ? prev.filter(x => x !== chId) : [...prev, chId]
+    );
+  };
+
   const reportTextProgress = useCallback(async (lesson) => {
     try {
       await axios.post(
@@ -599,11 +617,8 @@ export default function LearningPage() {
         { textReadSeconds: 10 },
         getAuthConfig()
       );
-
       setTextDoneMap((prev) => ({ ...prev, [lesson._id]: true }));
-
       const hasVideo = !!lesson.videoUrl;
-      // Đọc từ ref để luôn có giá trị mới nhất, tránh stale closure
       if (!hasVideo || videoDoneMapRef.current[lesson._id]) {
         markLessonCompletedLocal(lesson._id);
       }
@@ -619,11 +634,8 @@ export default function LearningPage() {
         { videoPercent: Math.round(percent) },
         getAuthConfig()
       );
-
       setVideoDoneMap((prev) => ({ ...prev, [lesson._id]: true }));
-
       const hasText = !!lesson.textContent;
-      // Đọc từ ref để luôn có giá trị mới nhất, tránh stale closure
       if (!hasText || textDoneMapRef.current[lesson._id]) {
         markLessonCompletedLocal(lesson._id);
       }
@@ -632,69 +644,45 @@ export default function LearningPage() {
     }
   }, [courseId]);
 
-  // Bug 2+3: sync refs mỗi khi state thay đổi — để callbacks đọc giá trị mới nhất
   useEffect(() => { videoDoneMapRef.current = videoDoneMap; }, [videoDoneMap]);
   useEffect(() => { textDoneMapRef.current  = textDoneMap;  }, [textDoneMap]);
 
   useEffect(() => {
     if (!currentLesson) return;
-
-    if (textTimerRef.current) {
-      clearTimeout(textTimerRef.current);
-    }
-
+    if (textTimerRef.current) clearTimeout(textTimerRef.current);
     if (currentLesson.textContent && !textDoneMap[currentLesson._id]) {
       textTimerRef.current = setTimeout(() => {
         reportTextProgress(currentLesson);
       }, 10000);
     }
-
-    return () => {
-      if (textTimerRef.current) {
-        clearTimeout(textTimerRef.current);
-      }
-    };
-  // Bug 2: bỏ videoDoneMap khỏi deps → timer KHÔNG bị reset khi video cập nhật
-  // reportTextProgress đọc videoDoneMapRef.current nên vẫn có giá trị mới nhất
+    return () => { if (textTimerRef.current) clearTimeout(textTimerRef.current); };
   }, [currentLesson, courseId, textDoneMap, reportTextProgress]);
 
   const handleVideoTimeUpdate = async (e, lesson) => {
     const video = e.target;
     if (!video?.duration) return;
-
     const lid         = lesson._id?.toString();
     const currentTime = video.currentTime;
     const lastTime    = videoLastTimeRef.current[lid] ?? currentTime;
     const delta       = currentTime - lastTime;
     videoLastTimeRef.current[lid] = currentTime;
-
-    // Chỉ tích lũy khi đi tiến & delta nhỏ (bỏ qua seek nhảy lớn > 2s)
     if (delta > 0 && delta < 2) {
       videoWatchedSecsRef.current[lid] = (videoWatchedSecsRef.current[lid] || 0) + delta;
-      // Cập nhật điểm xa nhất đã xem (dùng để giới hạn seek)
       const prevMax = videoMaxReachedRef.current[lid] || 0;
       if (currentTime > prevMax) videoMaxReachedRef.current[lid] = currentTime;
     }
-
     const watchedPct = ((videoWatchedSecsRef.current[lid] || 0) / video.duration) * 100;
-
-    // Ngưỡng 50%: phải xem THỰC TẾ đủ 50% thời lượng
     if (watchedPct >= 50 && !videoReportedRef.current[lid]) {
       videoReportedRef.current[lid] = true;
       await reportVideoProgress(lesson, 50);
     }
   };
 
-  // Giới hạn tua HTML5 video: không cho seek quá 5s so với điểm đã xem xa nhất
-  // Trừ khi video đã hoàn thành → cho tua tự do
   const handleVideoSeeking = (e, lesson) => {
     const video = e.target;
     if (!video?.duration) return;
-    const lid        = lesson._id?.toString();
-
-    // Nếu đã hoàn thành (trong session hoặc từ DB) → bỏ giới hạn
+    const lid = lesson._id?.toString();
     if (videoReportedRef.current[lid] || videoDoneMapRef.current[lid]) return;
-
     const maxReached = videoMaxReachedRef.current[lid] || 0;
     const maxAllowed = maxReached + 5;
     if (video.currentTime > maxAllowed) {
@@ -707,16 +695,13 @@ export default function LearningPage() {
 
   const isLessonLocked = (index) => {
     if (index === 0) return false;
-
     const previousLesson = lessons[index - 1];
     if (!previousLesson) return false;
-
-    // Bug 5: so sánh bằng string để tránh mismatch ObjectId vs string
     return !completedLessonIds.includes(previousLesson._id?.toString());
   };
 
-  const handleSelectLesson = (lesson, index) => {
-    if (isLessonLocked(index)) return;
+  const handleSelectLesson = (lesson, globalIndex) => {
+    if (isLessonLocked(globalIndex)) return;
     setCurrentLesson(lesson);
   };
 
@@ -725,224 +710,317 @@ export default function LearningPage() {
     return Math.round((completedLessonIds.length / lessons.length) * 100);
   };
 
+  // Build global index for each lesson (for lock check)
+  const lessonGlobalIndex = {};
+  lessons.forEach((l, i) => { lessonGlobalIndex[l._id] = i; });
+
+  const completionPct = getCompletionPercent();
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   return (
-    <div className="p-6 text-white">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{courseName || 'Học khóa học'}</h1>
-        {courseName && <p className="text-slate-400 mt-1 text-sm">Tiến độ học tập của bạn</p>}
-      </div>
+    <div className="h-screen flex flex-col bg-slate-950 text-white overflow-hidden">
 
-      <div className="mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-4">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-300">Tiến độ khóa học</span>
-          <span className="font-semibold text-blue-400">
-            {getCompletionPercent()}%
-          </span>
+      {/* ── Top Navigation Bar ──────────────────────────────────────────────── */}
+      <nav className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 flex-shrink-0 z-20">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
+            title="Quay lại"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="h-5 w-px bg-slate-700 hidden sm:block" />
+          <h1 className="font-semibold text-white truncate max-w-[180px] sm:max-w-md md:max-w-lg text-sm">
+            {courseName || 'Đang tải...'}
+          </h1>
         </div>
-        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-500 transition-all duration-500"
-            style={{ width: `${getCompletionPercent()}%` }}
-          />
-        </div>
-      </div>
 
-      {loading ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          Đang tải bài học...
-        </div>
-      ) : error ? (
-        <div className="bg-red-900/20 border border-red-800 text-red-300 rounded-2xl p-6">
-          {error}
-        </div>
-      ) : lessons.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          Không có bài học
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-              <h2 className="font-bold mb-4">Danh sách bài học</h2>
-
-              <div className="space-y-3">
-                {lessons.map((lesson, index) => {
-                  const locked = isLessonLocked(index);
-                  // Bug 5: normalize sang string khi so sánh
-                  const completed = completedLessonIds.includes(lesson._id?.toString());
-                  const active = currentLesson?._id?.toString() === lesson._id?.toString();
-
-                  return (
-                    <button
-                      key={lesson._id}
-                      onClick={() => handleSelectLesson(lesson, index)}
-                      disabled={locked}
-                      className={`w-full text-left p-3 rounded-xl border transition-all ${
-                        active
-                          ? 'bg-blue-600 border-blue-500'
-                          : locked
-                          ? 'bg-slate-800 border-slate-700 opacity-50 cursor-not-allowed'
-                          : 'bg-slate-800 border-slate-700 hover:border-slate-500'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="font-semibold text-sm">
-                            {index + 1}. {lesson.title}
-                          </div>
-                          <div className="text-xs text-slate-300 mt-1">
-                            {lesson.textContent ? 'Có văn bản' : 'Không có văn bản'}{' '}
-                            • {lesson.videoUrl ? 'Có video' : 'Không có video'}
-                          </div>
-                        </div>
-
-                        <div className="text-xs font-semibold">
-                          {completed ? (
-                            <span className="text-green-400">Xong</span>
-                          ) : locked ? (
-                            <span className="text-yellow-400">Khóa</span>
-                          ) : (
-                            <span className="text-blue-300">Mở</span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        <div className="flex items-center gap-4">
+          {/* Progress bar in navbar */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="w-32 bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${completionPct}%` }}
+              />
             </div>
+            <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+              <Award className="w-3.5 h-3.5 text-emerald-500" />
+              {completionPct}%
+            </span>
           </div>
 
-          <div className="lg:col-span-2">
-            {currentLesson ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <h2 className="text-xl font-bold mb-4">{currentLesson.title}</h2>
+          {/* Toggle sidebar button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </nav>
 
-                {currentLesson.videoUrl && (() => {
-                  const ytId = getYouTubeId(currentLesson.videoUrl);
-                  return (
-                    <div className="mb-5">
-                      {ytId ? (
-                        <LMSVideoPlayer
+      {/* ── Main Content Area ───────────────────────────────────────────────── */}
+      <div className="flex-1 flex overflow-hidden relative">
+
+        {/* Left: Video + Lesson Content */}
+        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${
+          sidebarOpen ? 'lg:mr-[380px]' : 'mr-0'
+        }`}>
+
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-3">
+                <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin mx-auto" />
+                <p className="text-slate-400 text-sm">Đang tải bài học...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="bg-red-900/20 border border-red-800 text-red-300 rounded-2xl p-6 max-w-md text-center">
+                {error}
+              </div>
+            </div>
+          ) : !currentLesson ? (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-slate-500">Chọn một bài học để bắt đầu</p>
+            </div>
+          ) : (
+            <>
+              {/* Video Player Area */}
+              {currentLesson.videoUrl && (() => {
+                const ytId = getYouTubeId(currentLesson.videoUrl);
+                return (
+                  <div className="bg-black">
+                    {ytId ? (
+                      <LMSVideoPlayer
                           videoId={ytId}
                           onWatchComplete={() => reportVideoProgress(currentLesson, 50)}
                           alreadyCompleted={!!videoDoneMap[currentLesson._id]}
+                          onDurationLoad={(secs) => setRealDurationMap(prev => ({ ...prev, [currentLesson._id]: secs }))}
                         />
-                      ) : (
-                        <>
-                          <video
-                            src={currentLesson.videoUrl}
-                            controls
-                            className="w-full rounded-xl bg-black"
-                            onTimeUpdate={(e) => handleVideoTimeUpdate(e, currentLesson)}
-                            onSeeking={(e) => handleVideoSeeking(e, currentLesson)}
-                          />
-                          {showHtmlSeekWarn && (
-                            <div className="mt-2 flex items-center justify-center gap-2 text-xs font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg py-2 px-3">
-                              ⚠️ Không thể tua qua phần chưa xem!
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <p className="text-xs text-slate-400 mt-2">
-                        Xem tối thiểu 50% video để hoàn thành phần video.
-                      </p>
-                    </div>
-                  );
-                })()}
+                    ) : (
+                      <div className="relative">
+                        <video
+                          src={currentLesson.videoUrl}
+                          controls
+                          className="w-full bg-black"
+                          style={{ aspectRatio: '16/9' }}
+                          onTimeUpdate={(e) => handleVideoTimeUpdate(e, currentLesson)}
+                          onSeeking={(e) => handleVideoSeeking(e, currentLesson)}
+                          onLoadedMetadata={(e) => setRealDurationMap(prev => ({ ...prev, [currentLesson._id]: e.target.duration }))}
+                        />
+                        {showHtmlSeekWarn && (
+                          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-orange-500/90 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl pointer-events-none">
+                            ⚠️ Không thể tua qua phần chưa xem!
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
-                {currentLesson.textContent && (
-                  <div className="mb-5">
-                    <h3 className="font-semibold mb-2">Nội dung bài học</h3>
-                    <div
-                        className="bg-slate-800 rounded-xl p-4 text-slate-200 leading-7 prose prose-invert max-w-none"
+              {/* Removed video placeholder for quiz/reading lessons to push content to the top */}
+
+              {/* Lesson Content Below Video */}
+              <div>
+                <div className="max-w-4xl mx-auto p-6 sm:p-8 space-y-6">
+                  {/* Lesson title */}
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1">{currentLesson.title}</h2>
+                    <p className="text-xs text-slate-500">
+                      {currentLesson.videoUrl && 'Xem tối thiểu 50% video để hoàn thành • '}
+                      {currentLesson.textContent && 'Đọc tối thiểu 10 giây để hoàn thành'}
+                    </p>
+                  </div>
+
+                  {/* Text Content */}
+                  {currentLesson.textContent && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                      <div
+                        className="text-slate-200 leading-7 prose prose-invert max-w-none text-sm"
                         dangerouslySetInnerHTML={{ __html: currentLesson.textContent }}
                       />
-                    <p className="text-xs text-slate-400 mt-2">
-                      Đọc tối thiểu 10 giây để hoàn thành phần văn bản.
-                    </p>
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* ── Quiz section ── */}
-                {currentLesson.type === 'quiz' && Array.isArray(currentLesson.questions) && currentLesson.questions.length > 0 && (
-                  <QuizSection
-                    key={currentLesson._id}
-                    lesson={currentLesson}
-                    courseId={courseId}
-                    getAuthConfig={getAuthConfig}
-                    alreadyDone={completedLessonIds.includes(currentLesson._id?.toString())}
-                    onComplete={() => markLessonCompletedLocal(currentLesson._id)}
-                  />
-                )}
+                  {/* Quiz */}
+                  {currentLesson.type === 'quiz' && Array.isArray(currentLesson.questions) && currentLesson.questions.length > 0 && (
+                    <QuizSection
+                      key={currentLesson._id}
+                      lesson={currentLesson}
+                      courseId={courseId}
+                      getAuthConfig={getAuthConfig}
+                      alreadyDone={completedLessonIds.includes(currentLesson._id?.toString())}
+                      onComplete={() => markLessonCompletedLocal(currentLesson._id)}
+                    />
+                  )}
 
-                {currentLesson.type === 'quiz' && (!currentLesson.questions || currentLesson.questions.length === 0) && (
-                  <div className="mb-5 bg-slate-800 rounded-xl p-5 text-slate-400 text-center">
-                    📝 Bài quiz này chưa có câu hỏi.
-                  </div>
-                )}
+                  {currentLesson.type === 'quiz' && (!currentLesson.questions || currentLesson.questions.length === 0) && (
+                    <div className="bg-slate-800/50 rounded-xl p-6 text-slate-400 text-center border border-slate-700">
+                      <HelpCircle className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                      Bài quiz này chưa có câu hỏi.
+                    </div>
+                  )}
 
-
-                <div className="bg-slate-800 rounded-xl p-4">
-                  <h3 className="font-semibold mb-2">Trạng thái bài học</h3>
-                  <div className="text-sm text-slate-300 space-y-1">
-                    <p>
-                      Văn bản:{' '}
-                      <span
-                        className={
-                          textDoneMap[currentLesson._id]
-                            ? 'text-green-400 font-semibold'
-                            : 'text-yellow-400 font-semibold'
-                        }
-                      >
-                        {currentLesson.textContent
-                          ? textDoneMap[currentLesson._id]
-                            ? 'Đã hoàn thành'
-                            : 'Chưa hoàn thành'
-                          : 'Không áp dụng'}
-                      </span>
-                    </p>
-                    <p>
-                      Video:{' '}
-                      <span
-                        className={
-                          videoDoneMap[currentLesson._id]
-                            ? 'text-green-400 font-semibold'
-                            : 'text-yellow-400 font-semibold'
-                        }
-                      >
-                        {currentLesson.videoUrl
-                          ? videoDoneMap[currentLesson._id]
-                            ? 'Đã hoàn thành'
-                            : 'Chưa hoàn thành'
-                          : 'Không áp dụng'}
-                      </span>
-                    </p>
-                    <p>
-                      Bài học:{' '}
-                      <span
-                        className={
-                          completedLessonIds.includes(currentLesson._id?.toString())
-                            ? 'text-green-400 font-semibold'
-                            : 'text-yellow-400 font-semibold'
-                        }
-                      >
-                        {completedLessonIds.includes(currentLesson._id?.toString())
-                          ? 'Đã hoàn thành'
-                          : 'Chưa hoàn thành'}
-                      </span>
-                    </p>
+                  {/* Lesson Status */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <h3 className="font-semibold mb-3 text-sm text-slate-300">Trạng thái bài học</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                        <div className={`text-xs font-semibold mb-1 ${textDoneMap[currentLesson._id] ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {currentLesson.textContent ? (textDoneMap[currentLesson._id] ? '✓ Hoàn thành' : '○ Chưa xong') : '— Không có'}
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">Văn bản</p>
+                      </div>
+                      <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                        <div className={`text-xs font-semibold mb-1 ${videoDoneMap[currentLesson._id] ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {currentLesson.videoUrl ? (videoDoneMap[currentLesson._id] ? '✓ Hoàn thành' : '○ Chưa xong') : '— Không có'}
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">Video</p>
+                      </div>
+                      <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+                        <div className={`text-xs font-semibold mb-1 ${completedLessonIds.includes(currentLesson._id?.toString()) ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {completedLessonIds.includes(currentLesson._id?.toString()) ? '✓ Hoàn thành' : '○ Chưa xong'}
+                        </div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">Bài học</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                Chọn một bài học để bắt đầu
-              </div>
-            )}
+            </>
+          )}
+        </div>
+
+        {/* ── Right Sidebar: Curriculum ─────────────────────────────────────── */}
+        <div className={`absolute top-0 right-0 bottom-0 w-full lg:w-[380px] bg-slate-900 border-l border-slate-800 flex flex-col transition-transform duration-300 z-10 ${
+          sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+            <h2 className="font-bold text-white text-sm">Nội dung khoá học</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-1.5 text-slate-400 hover:text-white lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Mobile progress */}
+          <div className="p-3 border-b border-slate-800 md:hidden">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-slate-400">Tiến độ</span>
+              <span className="font-semibold text-emerald-400">{completionPct}%</span>
+            </div>
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${completionPct}%` }} />
+            </div>
+          </div>
+
+          {/* Chapters List */}
+          <div className="flex-1 overflow-y-auto">
+            {groupedChapters.map((chapter, chIdx) => {
+              const completedInChapter = chapter.lessons.filter(l => completedLessonIds.includes(l._id?.toString())).length;
+              const isExpanded = expandedChapters.includes(chapter.id);
+
+              return (
+                <div key={chapter.id} className="border-b border-slate-800/60">
+                  {/* Chapter header */}
+                  <button
+                    onClick={() => toggleChapter(chapter.id)}
+                    className="w-full flex items-start justify-between p-4 hover:bg-slate-800/50 transition-colors text-left"
+                  >
+                    <div className="flex-1 pr-3">
+                      <h3 className="font-semibold text-sm text-white mb-1">{chapter.title}</h3>
+                      <div className="text-xs text-slate-500 flex items-center gap-2">
+                        <span>{completedInChapter}/{chapter.lessons.length} bài</span>
+                      </div>
+                    </div>
+                    <div className="mt-1">
+                      {isExpanded
+                        ? <ChevronUp className="w-4 h-4 text-slate-500" />
+                        : <ChevronDown className="w-4 h-4 text-slate-500" />
+                      }
+                    </div>
+                  </button>
+
+                  {/* Lessons */}
+                  {isExpanded && (
+                    <div className="bg-slate-950/50 py-1">
+                      {chapter.lessons.map((lesson) => {
+                        const gIdx      = lessonGlobalIndex[lesson._id];
+                        const locked    = isLessonLocked(gIdx);
+                        const completed = completedLessonIds.includes(lesson._id?.toString());
+                        const active    = currentLesson?._id?.toString() === lesson._id?.toString();
+                        const isVideo   = lesson.type === 'video' || !!lesson.videoUrl;
+                        const isQuiz    = lesson.type === 'quiz';
+
+                        return (
+                          <button
+                            key={lesson._id}
+                            onClick={() => handleSelectLesson(lesson, gIdx)}
+                            disabled={locked}
+                            className={`w-full flex items-start gap-3 py-3 px-4 sm:px-6 transition-colors text-left group ${
+                              active
+                                ? 'bg-slate-800/80 border-l-2 border-blue-500'
+                                : locked
+                                  ? 'opacity-40 cursor-not-allowed border-l-2 border-transparent'
+                                  : 'hover:bg-slate-800/40 border-l-2 border-transparent'
+                            }`}
+                          >
+                            {/* Status icon */}
+                            <div className="mt-0.5 flex-shrink-0">
+                              {completed ? (
+                                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                              ) : locked ? (
+                                <Lock className="w-4 h-4 text-slate-600" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-slate-600 group-hover:text-slate-400" />
+                              )}
+                            </div>
+
+                            {/* Lesson info */}
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm mb-1 line-clamp-2 ${
+                                active ? 'text-white font-medium' : 'text-slate-300 group-hover:text-white'
+                              }`}>
+                                {lesson.title}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                {isVideo ? <PlayCircle className="w-3 h-3" /> : isQuiz ? <HelpCircle className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                                <span>
+                                  {(() => {
+                                    const realSecs = realDurationMap[lesson._id];
+                                    if (realSecs > 0) {
+                                      const m = Math.floor(realSecs / 60);
+                                      const s = Math.floor(realSecs % 60);
+                                      return `${m}:${String(s).padStart(2, '0')}`;
+                                    }
+                                    if (lesson.duration > 0) return `${lesson.duration}p`;
+                                    return isQuiz ? 'Quiz' : 'Bài đọc';
+                                  })()}
+                                </span>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }

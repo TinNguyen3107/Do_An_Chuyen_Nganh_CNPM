@@ -36,7 +36,7 @@ export default function AdminCourseReview() {
           ? await adminCourseReviewAPI.getApproved(params)
           : filterTab === 'rejected'
           ? await adminCourseReviewAPI.getRejected(params)
-          : await adminCourseReviewAPI.getPending(params);
+          : await adminCourseReviewAPI.getPendingNew(params);
       setCourses(response.data.courses || []);
       setTotalPages(response.data.totalPages || 1);
     } catch {
