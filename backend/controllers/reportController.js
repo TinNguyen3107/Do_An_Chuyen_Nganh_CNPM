@@ -24,6 +24,17 @@ import {
   generateCSV,
   sendExportResponse,
 } from '../utils/exportHelper.js';
+import { dateRangeSchema } from '../validators/report.validator.js';
+
+// ─── Helper: validate query và trả lỗi 400 nếu không hợp lệ ─────────────────
+function validateDateRange(req, res) {
+  const { error, value } = dateRangeSchema.validate(req.query, { abortEarly: false });
+  if (error) {
+    res.status(400);
+    throw new Error(error.details.map((d) => d.message).join('; '));
+  }
+  return value; // trả về object đã được cast & default
+}
 
 // ─── Column definitions cho từng loại báo cáo ────────────────────────────────
 const REVENUE_COLS = [
@@ -83,14 +94,14 @@ async function exportReport(res, rows, cols, format, baseName, title) {
 
 /** GET /api/reports/revenue */
 export const getRevenueData = asyncHandler(async (req, res) => {
-  const { startDate, endDate, groupBy } = req.query;
+  const { startDate, endDate, groupBy } = validateDateRange(req, res);
   const result = await getRevenueReport({ startDate, endDate, groupBy });
   res.json({ success: true, data: result });
 });
 
 /** GET /api/reports/revenue/export?format=csv|excel */
 export const exportRevenue = asyncHandler(async (req, res) => {
-  const { startDate, endDate, groupBy, format = 'excel' } = req.query;
+  const { startDate, endDate, groupBy, format } = validateDateRange(req, res);
   const { rows } = await getRevenueReport({ startDate, endDate, groupBy });
   await exportReport(res, rows, REVENUE_COLS, format, 'revenue', 'Báo cáo Doanh thu');
 });
@@ -101,14 +112,14 @@ export const exportRevenue = asyncHandler(async (req, res) => {
 
 /** GET /api/reports/users */
 export const getUserData = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate } = validateDateRange(req, res);
   const result = await getUserReport({ startDate, endDate });
   res.json({ success: true, data: result });
 });
 
 /** GET /api/reports/users/export */
 export const exportUsers = asyncHandler(async (req, res) => {
-  const { startDate, endDate, format = 'excel' } = req.query;
+  const { startDate, endDate, format } = validateDateRange(req, res);
   const { rows } = await getUserReport({ startDate, endDate });
   await exportReport(res, rows, USER_COLS, format, 'users', 'Báo cáo Người dùng');
 });
@@ -119,14 +130,14 @@ export const exportUsers = asyncHandler(async (req, res) => {
 
 /** GET /api/reports/courses */
 export const getCourseData = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate } = validateDateRange(req, res);
   const result = await getCourseReport({ startDate, endDate });
   res.json({ success: true, data: result });
 });
 
 /** GET /api/reports/courses/export */
 export const exportCourses = asyncHandler(async (req, res) => {
-  const { startDate, endDate, format = 'excel' } = req.query;
+  const { startDate, endDate, format } = validateDateRange(req, res);
   const { rows } = await getCourseReport({ startDate, endDate });
   await exportReport(res, rows, COURSE_COLS, format, 'courses', 'Báo cáo Khoá học');
 });
@@ -137,14 +148,14 @@ export const exportCourses = asyncHandler(async (req, res) => {
 
 /** GET /api/reports/instructors */
 export const getInstructorData = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate } = validateDateRange(req, res);
   const result = await getInstructorReport({ startDate, endDate });
   res.json({ success: true, data: result });
 });
 
 /** GET /api/reports/instructors/export */
 export const exportInstructors = asyncHandler(async (req, res) => {
-  const { startDate, endDate, format = 'excel' } = req.query;
+  const { startDate, endDate, format } = validateDateRange(req, res);
   const { rows } = await getInstructorReport({ startDate, endDate });
   await exportReport(res, rows, INSTRUCTOR_COLS, format, 'instructors', 'Báo cáo Giảng viên');
 });
