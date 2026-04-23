@@ -30,46 +30,77 @@ function SummaryCard({ icon, label, value, color, sub }) {
 }
 
 function FilterBar({ startDate, endDate, groupBy, showGroupBy, onStartDate, onEndDate, onGroupBy, onSearch, loading }) {
+  const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const [dateError, setDateError] = useState('');
+
+  const handleSearch = () => {
+    // Validate phía client trước khi gọi API
+    if (startDate && startDate > todayStr) {
+      setDateError('Ngày bắt đầu không được ở tương lai');
+      return;
+    }
+    if (endDate && endDate > todayStr) {
+      setDateError('Ngày kết thúc không được ở tương lai');
+      return;
+    }
+    if (startDate && endDate && startDate > endDate) {
+      setDateError('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+      return;
+    }
+    setDateError('');
+    onSearch();
+  };
+
   return (
-    <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-slate-800/60 border border-slate-700 rounded-2xl">
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-slate-400 font-medium">Từ ngày</label>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => onStartDate(e.target.value)}
-          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-slate-400 font-medium">Đến ngày</label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => onEndDate(e.target.value)}
-          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-        />
-      </div>
-      {showGroupBy && (
+    <div className="mb-6">
+      <div className="flex flex-wrap items-end gap-3 p-4 bg-slate-800/60 border border-slate-700 rounded-2xl">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-400 font-medium">Nhóm theo</label>
-          <select
-            value={groupBy}
-            onChange={(e) => onGroupBy(e.target.value)}
+          <label className="text-xs text-slate-400 font-medium">Từ ngày</label>
+          <input
+            type="date"
+            value={startDate}
+            max={todayStr}
+            onChange={(e) => { onStartDate(e.target.value); setDateError(''); }}
             className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-          >
-            <option value="day">Theo ngày</option>
-            <option value="month">Theo tháng</option>
-          </select>
+          />
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-400 font-medium">Đến ngày</label>
+          <input
+            type="date"
+            value={endDate}
+            max={todayStr}
+            min={startDate || undefined}
+            onChange={(e) => { onEndDate(e.target.value); setDateError(''); }}
+            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+        {showGroupBy && (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-400 font-medium">Nhóm theo</label>
+            <select
+              value={groupBy}
+              onChange={(e) => onGroupBy(e.target.value)}
+              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="day">Theo ngày</option>
+              <option value="month">Theo tháng</option>
+            </select>
+          </div>
+        )}
+        <button
+          onClick={handleSearch}
+          disabled={loading}
+          className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          {loading ? '⏳ Đang tải...' : '🔍 Xem báo cáo'}
+        </button>
+      </div>
+      {dateError && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-red-400 font-medium">
+          <span>⚠️</span> {dateError}
+        </p>
       )}
-      <button
-        onClick={onSearch}
-        disabled={loading}
-        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
-      >
-        {loading ? '⏳ Đang tải...' : '🔍 Xem báo cáo'}
-      </button>
     </div>
   );
 }
